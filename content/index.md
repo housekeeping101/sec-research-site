@@ -1,3 +1,7 @@
+---
+title: Security Research Notes
+---
+
 # Research Index
 
 A living index of all research notes in the vault. Updated each time a new note is created through the [[40 - Resources/Research & Hunt Workflow|Research & Hunt Workflow]].
