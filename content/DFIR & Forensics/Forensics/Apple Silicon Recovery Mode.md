@@ -132,4 +132,3 @@ Recovery Mode's Time Machine restore and internet reinstall options allow clean 
 - [[30 - Knowledge/Cybersecurity/DFIR & Forensics/Forensics/Mac Forensics]]
 - [[30 - Knowledge/Cybersecurity/DFIR & Forensics/Forensics/Mac Traige]]
 - [[20 - Areas/Threat Hunting/Sentinelone Mac OS Hunting]]
-- [[20 - Areas/Threat Hunting/Threat Hunting macOS]]

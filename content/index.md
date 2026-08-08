@@ -57,7 +57,6 @@ A living index of all research notes in the vault. Updated each time a new note 
 | [[20 - Areas/Threat Hunting/Hunt - AWS SSM Lateral Movement\|Hunt - AWS SSM Lateral Movement]] | Active | T1651, T1021, T1059.009 | AWS | 2026-03-13 |
 | [[20 - Areas/Threat Hunting/Hunt - AWS STS AssumeRole and Cross-Account Attacks\|Hunt - AWS STS AssumeRole and Cross-Account Attacks]] | Active | T1078.004, T1548, T1550.001 | AWS | 2026-03-13 |
 | [[20 - Areas/Threat Hunting/Sentinelone Mac OS Hunting\|SentinelOne macOS Hunting]] | — | — | macOS | — |
-| [[20 - Areas/Threat Hunting/Threat Hunting macOS\|Threat Hunting macOS]] | — | — | macOS | — |
 | [[20 - Areas/Threat Hunting/Hunt - ClickFix macOS Script Editor and Atomic Stealer\|Hunt - ClickFix macOS Script Editor and Atomic Stealer]] | Active | T1204.001, T1059.004, T1140, T1105, T1218.005 | macOS | 2026-04-10 |
 | [[20 - Areas/Threat Hunting/Hunt - macOS Gaslight Backdoor\|Hunt - macOS Gaslight Backdoor]] | Active | T1123, T1115, T1056.004, T1571, T1543.001, T1020 | macOS | 2026-07-10 |
 | [[20 - Areas/Threat Hunting/Hunt - macOS TCC Manipulation\|Hunt - macOS TCC Manipulation]] | Active | T1566.001, T1059.002, T1547, T1217, T1071.001, T1547.015 | macOS | 2026-07-25 |

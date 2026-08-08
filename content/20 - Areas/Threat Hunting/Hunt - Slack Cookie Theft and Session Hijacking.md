@@ -170,5 +170,4 @@ ORDER BY timestamp DESC;
 ## Related Notes
 - [[30 - Knowledge/Cybersecurity/Attack Techniques/Abusing Slack for Offensive Operations]] — source TTP note with full attack breakdown and file paths
 - [[30 - Knowledge/Cybersecurity/Malware & TTPs/macOS Info Stealer - Data Targeted]] — macOS stealer data targeting (session cookies are the same vector)
-- [[20 - Areas/Threat Hunting/Threat Hunting macOS]]
 - [[20 - Areas/Detection Engineering/Detections]]
