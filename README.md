@@ -1,17 +1,15 @@
-# Quartz v5
+# Security Research Notes
 
-> “[One] who works with the door open gets all kinds of interruptions, but [they] also occasionally gets clues as to what the world is and what might be important.” — Richard Hamming
+🔗 **Live site:** https://housekeeping101.github.io/sec-research-site/
 
-Quartz is a set of tools that helps you publish your [digital garden](https://jzhao.xyz/posts/networked-thought) and notes as a website for free.
+Published cybersecurity research: attack technique writeups (with MITRE ATT&CK mapping and detection queries), malware/TTP research extractions, threat actor profiles, DFIR/forensics reference notes, threat hunting playbooks, and tooling notes.
 
-🔗 Read the documentation and get started: https://quartz.jzhao.xyz/
+## How this is published
 
-[Join the Discord Community](https://discord.gg/cRFFHYye7t)
+This site is generated from a private Obsidian research vault. Notes are only published here once they're explicitly cleared for git tracking in that vault (a whitelist-gated `.gitignore`, not a blocklist) — nothing leaves the vault by default. A GitHub Action in the vault repo syncs cleared notes over on every relevant push, and this repo's own Action rebuilds and redeploys the site via [Quartz](https://quartz.jzhao.xyz/), a static site generator built for publishing Obsidian-style notes.
 
-## Sponsors
+## Structure
 
-<p align="center">
-  <a href="https://github.com/sponsors/jackyzha0">
-    <img src="https://cdn.jsdelivr.net/gh/jackyzha0/jackyzha0/sponsorkit/sponsors.svg" />
-  </a>
-</p>
+- `content/` — the published notes (source of truth lives in the private vault)
+- `quartz.config.yaml` — site configuration
+- everything else is the Quartz v5 site generator itself
