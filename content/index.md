@@ -104,8 +104,6 @@ A living index of all research notes in the vault. Updated each time a new note 
 
 | Note | Type |
 |---|---|
-| [[20 - Areas/Detection Engineering/Detections\|Detections]] | Active detections |
-| [[20 - Areas/Detection Engineering/DEO RBA\|DEO RBA]] | Risk-based alerting |
 | [[40 - Resources/Query Library/Hunt Queries\|Hunt Queries]] | Query library |
 
 ---
