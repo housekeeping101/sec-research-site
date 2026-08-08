@@ -289,4 +289,4 @@ PassRole escalation and direct policy manipulation are used across financially m
 ## Related Notes
 - [[Hunt - AWS IAM Privilege Escalation]] — active hunt hypothesis with queries
 - [[EC2 Instance Metadata Service Abuse]] — credential theft technique feeding into IAM abuse
-- [[30 - Knowledge/Cybersecurity/Research Index]]
+- [[Research Index]]

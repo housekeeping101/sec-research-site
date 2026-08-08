@@ -491,4 +491,4 @@ ORDER BY command_count DESC;
 - [[Hunt - AWS SSM Lateral Movement]] — active hunt hypothesis with queries
 - [[AWS IAM Privilege Escalation]] — escalation enabling SSM access
 - [[AWS STS AssumeRole and Cross-Account Attacks]] — cross-account SSM execution
-- [[30 - Knowledge/Cybersecurity/Research Index]]
+- [[Research Index]]

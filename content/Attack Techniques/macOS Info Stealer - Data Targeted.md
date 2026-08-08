@@ -159,5 +159,5 @@ ORDER BY timestamp DESC
 
 ## Related Notes
 - [[Abusing Slack for Offensive Operations]]
-- [[30 - Knowledge/Cybersecurity/DFIR & Forensics/Forensics/Mac Forensics]]
+- [[DFIR & Forensics/Forensics/Mac Forensics]]
 - [[40 - Resources/Query Library/Hunt Queries]]

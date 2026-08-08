@@ -251,7 +251,7 @@ _(No results yet — hunt not executed)_
 - [ ] Detection rule created based on hunt findings
 
 ## Related Notes
-- [[30 - Knowledge/Cybersecurity/Attack Techniques/ClickFix macOS via Script Editor]]
-- [[30 - Knowledge/Cybersecurity/Malware & TTPs/ClickFix macOS Script Editor and Atomic Stealer - Research Extraction]]
+- [[Attack Techniques/ClickFix macOS via Script Editor]]
+- [[Malware & TTPs/ClickFix macOS Script Editor and Atomic Stealer - Research Extraction]]
 - [[40 - Resources/Query Library/Hunt Queries]]
 - [[20 - Areas/Detection Engineering/Detections]]

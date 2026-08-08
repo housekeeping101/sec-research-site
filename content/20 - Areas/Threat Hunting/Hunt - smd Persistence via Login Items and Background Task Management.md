@@ -190,7 +190,7 @@ _(No results yet — hunt not executed)_
 - [ ] Detection rule created based on hunt findings
 
 ## Related Notes
-- [[30 - Knowledge/Cybersecurity/DFIR & Forensics/Forensics/macOS]]
+- [[DFIR & Forensics/Forensics/macOS]]
 - [[Hunt - macOS Gaslight Backdoor]]
 - [[Hunt - ClickFix macOS Script Editor and Atomic Stealer]]
 - [[40 - Resources/Query Library/Hunt Queries]]

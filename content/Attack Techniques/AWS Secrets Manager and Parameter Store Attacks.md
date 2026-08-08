@@ -363,4 +363,4 @@ ORDER BY minutes_between;
 - [[Hunt - AWS Secrets Manager Credential Harvesting]] — active hunt hypothesis with queries
 - [[AWS IAM Privilege Escalation]] — escalation enabling secret access
 - [[EC2 Instance Metadata Service Abuse]] — IMDS credential theft enabling secret access
-- [[30 - Knowledge/Cybersecurity/Research Index]]
+- [[Research Index]]

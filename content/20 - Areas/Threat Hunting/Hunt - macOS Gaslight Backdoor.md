@@ -58,7 +58,7 @@ tags:
    Search for downloads or executions referencing `astral-sh/python-build-standalone` or CPython 3.10.18 standalone builds on endpoints without an established developer/build use case.
 
 6. **Hash hunt for known macOS.Gaslight and sibling BONZAI artifacts**
-   Search all file write and execution events for the known SHA256 hashes documented in [[30 - Knowledge/Cybersecurity/Malware & TTPs/macOS Gaslight Backdoor - Research Extraction]].
+   Search all file write and execution events for the known SHA256 hashes documented in [[Malware & TTPs/macOS Gaslight Backdoor - Research Extraction]].
 
 7. **Code signature hunt**
    Search for binaries carrying the ad hoc signing ID `endpoint-macos-aarch64-5555494492fc075f441637fb9d894913dde3a2ea` or similarly-patterned `endpoint-macos-aarch64-*` ad hoc signatures.
@@ -261,7 +261,7 @@ _(No results yet — hunt not executed)_
 - [ ] Detection rule created based on hunt findings
 
 ## Related Notes
-- [[30 - Knowledge/Cybersecurity/Attack Techniques/macOS Gaslight Backdoor]]
-- [[30 - Knowledge/Cybersecurity/Malware & TTPs/macOS Gaslight Backdoor - Research Extraction]]
+- [[Attack Techniques/macOS Gaslight Backdoor]]
+- [[Malware & TTPs/macOS Gaslight Backdoor - Research Extraction]]
 - [[40 - Resources/Query Library/Hunt Queries]]
 - [[20 - Areas/Detection Engineering/Detections]]

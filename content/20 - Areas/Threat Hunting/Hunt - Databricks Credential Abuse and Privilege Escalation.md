@@ -223,6 +223,6 @@ ORDER BY stage_count DESC
 
 ## Related Notes
 
-- [[30 - Knowledge/Cybersecurity/Attack Techniques/Databricks API Abuse and Privilege Escalation|TTP Note — Databricks API Abuse and Privilege Escalation]]
-- [[30 - Knowledge/Cybersecurity/Malware & TTPs/DBXploit Databricks Exploitation - Research Extraction|Research Extraction — DBXploit Databricks Exploitation]]
+- [[Attack Techniques/Databricks API Abuse and Privilege Escalation|TTP Note — Databricks API Abuse and Privilege Escalation]]
+- [[Malware & TTPs/DBXploit Databricks Exploitation - Research Extraction|Research Extraction — DBXploit Databricks Exploitation]]
 - [[20 - Areas/Detection Engineering/Detections|Detection Engineering]]

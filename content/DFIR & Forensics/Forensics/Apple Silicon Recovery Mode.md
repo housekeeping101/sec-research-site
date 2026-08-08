@@ -129,6 +129,6 @@ Recovery Mode's Time Machine restore and internet reinstall options allow clean 
 - [An Illustrated Guide to Recovery on Apple Silicon Macs 2.0 — Howard Oakley, Eclecticlight.co (2026-02-16)](https://eclecticlight.co/2026/02/16/an-illustrated-guide-to-recovery-on-apple-silicon-macs-2-0/)
 
 ## Related Notes
-- [[30 - Knowledge/Cybersecurity/DFIR & Forensics/Forensics/Mac Forensics]]
-- [[30 - Knowledge/Cybersecurity/DFIR & Forensics/Forensics/Mac Traige]]
+- [[DFIR & Forensics/Forensics/Mac Forensics]]
+- [[DFIR & Forensics/Forensics/Mac Traige]]
 - [[20 - Areas/Threat Hunting/Sentinelone Mac OS Hunting]]

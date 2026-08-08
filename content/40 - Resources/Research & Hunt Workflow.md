@@ -10,12 +10,12 @@ A repeatable process for turning raw threat intelligence into structured knowled
 SOURCE (article / blog / report / tweet)
     │
     ▼
-[1] RESEARCH EXTRACTION NOTE        → 30 - Knowledge/Cybersecurity/Malware & TTPs/
+[1] RESEARCH EXTRACTION NOTE        → Malware & TTPs/
     Raw technical dump: file paths,
     tools, commands, IOCs, API endpoints
     │
     ▼
-[2] TTP NOTE                        → 30 - Knowledge/Cybersecurity/Attack Techniques/
+[2] TTP NOTE                        → Attack Techniques/
     Structured technique: MITRE mapping,
     how it works, detection opportunities,
     query stubs
@@ -27,7 +27,7 @@ SOURCE (article / blog / report / tweet)
     │
     ▼
 [4] UPDATE INDEX + DAILY NOTE + CHANGELOG
-    Research Index → 30 - Knowledge/Cybersecurity/Research Index.md
+    Research Index → Research Index.md
     Daily Note     → 00 - Inbox/Daily Note/YYYY-MM-DD.md
     Changelog      → CHANGELOG.md
 ```
@@ -38,10 +38,10 @@ SOURCE (article / blog / report / tweet)
 
 | Note Type | Template | Destination | Purpose |
 |---|---|---|---|
-| Research Extraction | Template - TTP Note | `30 - Knowledge/Cybersecurity/Malware & TTPs/` | Raw technical intel dump |
-| TTP Note | Template - TTP Note | `30 - Knowledge/Cybersecurity/Attack Techniques/` | Structured MITRE-mapped technique |
+| Research Extraction | Template - TTP Note | `Malware & TTPs/` | Raw technical intel dump |
+| TTP Note | Template - TTP Note | `Attack Techniques/` | Structured MITRE-mapped technique |
 | Hunt Hypothesis | Template - Hunt Hypothesis | `20 - Areas/Threat Hunting/` | Actionable hunt with queries and findings |
-| Threat Actor Profile | Template - Threat Actor Profile | `30 - Knowledge/Cybersecurity/Threat Actors & APTs/` | Actor attribution and TTP mapping |
+| Threat Actor Profile | Template - Threat Actor Profile | `Threat Actors & APTs/` | Actor attribution and TTP mapping |
 | IOC Tracker | Template - IOC Tracker | `40 - Resources/Indicators (IOCs)/` | Campaign-specific indicators |
 | Reading Note | Template - Reading Note | `30 - Knowledge/Books & Reading Notes/` | Long-form content (books, papers, reports) |
 

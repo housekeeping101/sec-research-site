@@ -178,6 +178,6 @@ LIMIT 500;
 - [TChCh-Changes: A Look at macOS TCC Manipulation in the Wild (@oj-sec, 2026-07-21)](https://oj-sec.com/blog/20260721/)
 
 ## Related Notes
-- [[30 - Knowledge/Cybersecurity/Malware & TTPs/macOS TCC Manipulation - Research Extraction]]
+- [[Malware & TTPs/macOS TCC Manipulation - Research Extraction]]
 - [[20 - Areas/Threat Hunting/Hunt - macOS TCC Manipulation]]
-- [[30 - Knowledge/Cybersecurity/Attack Techniques/macOS Info Stealer - Data Targeted]] — related macOS credential/data targeting context
+- [[Attack Techniques/macOS Info Stealer - Data Targeted]] — related macOS credential/data targeting context

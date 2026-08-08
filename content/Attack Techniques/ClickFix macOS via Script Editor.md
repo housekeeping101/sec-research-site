@@ -169,7 +169,7 @@ LIMIT 500;
 | Unattributed | Observed in April 2026 campaign delivering Atomic Stealer (AMOS); no specific threat actor attribution in Jamf report |
 | Generic ClickFix operators | ClickFix social engineering previously attributed to various financially motivated actors; macOS Script Editor variant is a newer evasion evolution |
 
-See also: [[30 - Knowledge/Cybersecurity/Attack Techniques/ClickFix]] for Windows/Linux ClickFix variants and nation-state usage (APT36).
+See also: [[Attack Techniques/ClickFix]] for Windows/Linux ClickFix variants and nation-state usage (APT36).
 
 ## Vendor Response
 
@@ -203,7 +203,7 @@ Full pasted content and source bundle identifiers are redacted (`<private>`) by 
 - [Objective by the Sea v8 talk — Koh M. Nakagawa, original es_event_paste_t / xprotectd reverse engineering](https://objectivebythesea.org/v8/talks/OBTS_v8_kNakagawa.pdf)
 
 ## Related Notes
-- [[30 - Knowledge/Cybersecurity/Malware & TTPs/ClickFix macOS Script Editor and Atomic Stealer - Research Extraction]]
+- [[Malware & TTPs/ClickFix macOS Script Editor and Atomic Stealer - Research Extraction]]
 - [[20 - Areas/Threat Hunting/Hunt - ClickFix macOS Script Editor and Atomic Stealer]]
-- [[30 - Knowledge/Cybersecurity/Attack Techniques/ClickFix]] — Windows/Linux ClickFix variants
-- [[30 - Knowledge/Cybersecurity/Attack Techniques/macOS Info Stealer - Data Targeted]] — Atomic Stealer payload context
+- [[Attack Techniques/ClickFix]] — Windows/Linux ClickFix variants
+- [[Attack Techniques/macOS Info Stealer - Data Targeted]] — Atomic Stealer payload context

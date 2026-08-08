@@ -80,7 +80,7 @@ macOS.Gaslight is a Rust-based macOS backdoor from a DPRK-aligned activity clust
 - `~/Library/LaunchAgents/com.apple.system.services.activity.plist`
 - `/tmp/collected_data.zip`
 - Ad hoc code signature `endpoint-macos-aarch64-5555494492fc075f441637fb9d894913dde3a2ea`
-- SHA256 `6328567511d88fdc2ae0939c5ef17b7a63d2a833881900de018a4f12f4982525` (macOS.Gaslight) and related sibling/dropped-file hashes in [[30 - Knowledge/Cybersecurity/Malware & TTPs/macOS Gaslight Backdoor - Research Extraction]]
+- SHA256 `6328567511d88fdc2ae0939c5ef17b7a63d2a833881900de018a4f12f4982525` (macOS.Gaslight) and related sibling/dropped-file hashes in [[Malware & TTPs/macOS Gaslight Backdoor - Research Extraction]]
 
 ## Query Stubs
 
@@ -173,12 +173,12 @@ LIMIT 500;
 |---|---|
 | DPRK-aligned macOS activity cluster (unnamed in source) | Assessed with high confidence by SentinelOne based on code/infrastructure overlap with sibling sample BONZAI, detected by Apple XProtect rule `MACOS_BONZAI_COBUCH`, and linkage to the `AIRPIPE` rule cluster |
 
-See also: [[30 - Knowledge/Cybersecurity/Attack Techniques/macOS Info Stealer - Data Targeted]] for broader macOS credential/data-targeting patterns used by similar clusters.
+See also: [[Attack Techniques/macOS Info Stealer - Data Targeted]] for broader macOS credential/data-targeting patterns used by similar clusters.
 
 ## References
 - [macOS.Gaslight: Rust Backdoor Turns Prompt Injection on the Analyst, Not the Sandbox — SentinelOne SentinelLABS (Phil Stokes, 2026-06-23)](https://www.sentinelone.com/labs/macos-gaslight-rust-backdoor-turns-prompt-injection-on-the-analyst-not-the-sandbox/)
 
 ## Related Notes
-- [[30 - Knowledge/Cybersecurity/Malware & TTPs/macOS Gaslight Backdoor - Research Extraction]]
+- [[Malware & TTPs/macOS Gaslight Backdoor - Research Extraction]]
 - [[20 - Areas/Threat Hunting/Hunt - macOS Gaslight Backdoor]]
-- [[30 - Knowledge/Cybersecurity/Attack Techniques/macOS Info Stealer - Data Targeted]] — related macOS credential/data targeting context
+- [[Attack Techniques/macOS Info Stealer - Data Targeted]] — related macOS credential/data targeting context

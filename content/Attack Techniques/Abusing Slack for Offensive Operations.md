@@ -267,6 +267,6 @@ No specific named threat actor usage documented in source, but this technique is
 ## Related Notes
 - [[macOS Info Stealer - Data Targeted]]
 - [[20 - Areas/Threat Hunting/Hunt - Slack Cookie Theft and Session Hijacking]] — active hunt hypothesis derived from this TTP
-- [[30 - Knowledge/Cybersecurity/Tools & Platforms/Cobalt Strike]]
+- [[Tools & Platforms/Cobalt Strike]]
 - [[20 - Areas/Threat Hunting/Threat Hunt]]
 - [[40 - Resources/Query Library/Hunt Queries]]

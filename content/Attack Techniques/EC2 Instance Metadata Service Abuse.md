@@ -283,4 +283,4 @@ IMDS credential theft via SSRF is a well-established technique across financiall
 ## Related Notes
 - [[Hunt - EC2 IMDS Credential Theft]] — active hunt hypothesis with queries
 - [[AWS IAM Privilege Escalation]] — what attackers do with stolen instance credentials
-- [[30 - Knowledge/Cybersecurity/Research Index]]
+- [[Research Index]]

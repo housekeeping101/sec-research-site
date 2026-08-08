@@ -413,4 +413,4 @@ ORDER BY event_time DESC;
 - [[Hunt - AWS STS AssumeRole and Cross-Account Attacks]] — active hunt hypothesis
 - [[AWS IAM Privilege Escalation]] — initial access enabling role assumption
 - [[AWS SSM Lateral Movement and Command Execution]] — post-AssumeRole execution
-- [[30 - Knowledge/Cybersecurity/Research Index]]
+- [[Research Index]]

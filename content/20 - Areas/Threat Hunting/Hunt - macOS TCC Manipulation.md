@@ -35,7 +35,7 @@ Why this is worth hunting:
 4. Query file-write events targeting `TCC.db` (system and user paths) from any process other than `tccd`/`syspolicyd`; cross-reference each hit against ESF `tcc_modify` consent-grant events for the same timestamp/user — a write with no matching consent event is a strong positive.
 5. Query LaunchAgent creation under `~/Library/LaunchAgents/` occurring within 30 minutes of any Script Editor/osacompile activity on the same host.
 6. Query DNS/network logs for the known C2 domains (`cigalsn.com`, `ecoferros.com`) and the `.php?req=contact`/`.php?req=tell` URI patterns, independent of the above — this catches beaconing even if the TCC-write step was missed.
-7. For any host with 2+ hits across steps 2–6, pivot to full process-tree reconstruction and file-hash comparison against the known IOC list in [[30 - Knowledge/Cybersecurity/Malware & TTPs/macOS TCC Manipulation - Research Extraction]].
+7. For any host with 2+ hits across steps 2–6, pivot to full process-tree reconstruction and file-hash comparison against the known IOC list in [[Malware & TTPs/macOS TCC Manipulation - Research Extraction]].
 8. On any host flagged in step 7 (macOS 26.4+/Sequoia 15.4+ only — this control doesn't exist on earlier builds), pull `xprotectd`'s local unified log for the incident window. Confirmed via testing: `xprotectd` logs every paste operation system-wide under `com.apple.security.xprotectd:main`, including a Safe Browsing URL-reputation lookup pass and a plaintext `"Source process is not a browser"` decision branch. This is a live-response/triage step, not a fleet-wide query — it isn't centrally ingested by CrowdStrike/Databricks today, so it only helps on hosts you can already reach directly.
 
 ## Queries
@@ -162,6 +162,6 @@ LIMIT 500;
 - [ ] Detection rule created → [[link to rule]]
 
 ## Related Notes
-- [[30 - Knowledge/Cybersecurity/Attack Techniques/macOS TCC Manipulation via AppleScript]]
-- [[30 - Knowledge/Cybersecurity/Malware & TTPs/macOS TCC Manipulation - Research Extraction]]
+- [[Attack Techniques/macOS TCC Manipulation via AppleScript]]
+- [[Malware & TTPs/macOS TCC Manipulation - Research Extraction]]
 - [[40 - Resources/Query Library/Hunt Queries]]

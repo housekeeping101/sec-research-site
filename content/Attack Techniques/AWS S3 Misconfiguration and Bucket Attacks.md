@@ -407,4 +407,4 @@ S3 misconfiguration exploitation is extremely common across all threat actor cat
 - [[Hunt - AWS S3 Misconfiguration and Exfiltration]] — active hunt hypothesis with queries
 - [[AWS IAM Privilege Escalation]] — IAM permissions enabling authenticated S3 attacks
 - [[EC2 Instance Metadata Service Abuse]] — IMDS credential theft enabling authenticated S3 access
-- [[30 - Knowledge/Cybersecurity/Research Index]]
+- [[Research Index]]
