@@ -181,3 +181,4 @@ LIMIT 500;
 - [[Malware & TTPs/macOS TCC Manipulation - Research Extraction]]
 - [[20 - Areas/Threat Hunting/Hunt - macOS TCC Manipulation]]
 - [[Attack Techniques/macOS Info Stealer - Data Targeted]] — related macOS credential/data targeting context
+

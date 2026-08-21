@@ -11,6 +11,8 @@
 
 ## **TCC Bypass & XPC Exploitation (EXP-312)**
 
+Source material: [[EXP-312 - macOS Control Bypasses.pdf#page=249|Ch.7 XPC Attacks]] (p.249) and [[EXP-312 - macOS Control Bypasses.pdf#page=355|Ch.9 Bypassing TCC]] (p.355) — see [[Index Exp-312]] for the full page-indexed table of contents.
+
 ---
 
 ## **1. TCC (Transparency, Consent, and Control) Bypass**
