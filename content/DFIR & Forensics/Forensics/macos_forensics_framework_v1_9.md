@@ -171,6 +171,8 @@ KnowledgeC is arguably the most valuable single artifact on modern macOS systems
 | macOS Version     | 10.14 (Mojave) and later                              |
 | Key Tables        | ZOBJECT, ZSTRUCTUREDMETADATA, ZSOURCE                 |
 
+> **Live acquisition note:** the system-level path (`/private/var/db/CoreDuet/Knowledge/`) is SIP-protected. Per [UAC](https://github.com/tclahr/uac)'s collector definition, this path is only collectible on a live system if System Integrity Protection is disabled; on a SIP-enabled live system, plan to collect the user-level path instead, or acquire the system path via a forensic image/offline mount rather than live collection. The same SIP caveat applies to Biome's system-level path (4.2) and Powerlog (4.11).
+
 #### 4.1.1 What KnowledgeC Records
 
 - Application launch and termination events with timestamps
@@ -318,13 +320,26 @@ The views.db schema includes three additional context event tables that share th
 
 Spotlight indexes file metadata across the system. Even after a file is deleted, Spotlight indexes may retain evidence of its existence.
 
-- Main store location: /.Spotlight-V100/Store-V2/
+- Volume-level store: `/.Spotlight-V100/Store-V2/<UUID>/store.db` (and a hidden `.store.db` variant at the same location; keyed by volume UUID)
 
-- User-level: ~/Library/Metadata/CoreSpotlight/
+- User-level store, by macOS version:
+  - **10.13 – 11:** `~/Library/Metadata/CoreSpotlight/index.spotlightV3/`
+  - **12+ (through at least Sonoma; expected to still apply on Tahoe, unverified):**
+    - `~/Library/Metadata/CoreSpotlight/NSFileProtectionComplete/index.spotlightV3/`
+    - `~/Library/Metadata/CoreSpotlight/NSFileProtectionCompleteUnlessOpen/index.spotlightV3/`
+    - `~/Library/Metadata/CoreSpotlight/NSFileProtectionCompleteUntilFirstUserAuthentication/index.spotlightV3/`
+    - Cache variants also exist under `~/Library/Caches/com.apple.helpd/NSFileProtection*/index.spotlightV3/`
+  - Files under `NSFileProtectionCompleteUnlessOpen`/`NSFileProtectionCompleteUntilFirstUserAuthentication` are expected to be **encrypted at rest** (Data Protection class) — plan for a live/decrypted extraction rather than an offline read of these specific paths
+
+- Auxiliary files: `store.db` requires accompanying `dbStr-*.map.data` files present in the same folder to parse correctly — extract the whole containing folder, not just `store.db` in isolation
+
+- Format: binary proprietary, block-based storage. Header signature `7tsd` (0x37 0x74 0x73 0x64) or `8tsd` (0x38 0x74 0x73 0x64) depending on version; internal block signatures `1mbd`/`2mbd` (block 0) and `2pbd` (data blocks). Verify signature before selecting a parser.
 
 - Contains: file names, content snippets, metadata, application associations, timestamps
 
 - Useful for: proving a file existed even after deletion, identifying user searches
+
+- Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) (`plugins/spotlight.py`, `plugins/helpers/spotlight_parser.py`) — paths, version scoping, and format signatures above verified directly against plugin source (`spotlight.py` docstring + `spotlight_parser.py` signature checks) on 2026-08-21, not independently confirmed against a live Tahoe system. See also: [mac_apt wiki — Search and Indexing](https://deepwiki.com/ydkhatri/mac_apt/5.4-search-and-indexing)
 
 Use mdls <filename> to inspect all Spotlight-indexed metadata for a specific file, or mdimport -t -d2 <filename> to see what the mdimporter for that file type would extract. Note: mdimport has been known to crash on macOS Sonoma and later — mdls is the more reliable option for field use.
 
@@ -336,6 +351,8 @@ Stored in: ~/Library/Application Support/com.apple.sharedfilelist/
 
 These SFL2 (Shared File List) binary files record recently accessed applications, documents, and servers. They can be parsed with tools such as sflparser or mac_apt's RECENTFILES plugin.
 
+Additional named MRU-bearing plists (recent searches/places, sidebar favorites) live alongside the above under `~/Library/Preferences/`: `com.apple.finder.plist`, `com.apple.recentitems.plist`, `com.apple.sidebarlists.plist`, and `*.LSSharedFileList.plist` — source: [UAC](https://github.com/tclahr/uac) `artifacts/files/system/macos_mru.yaml`, 2026-08-21, unverified against a live system.
+
 #### 4.5.2 Dock Plist
 
 Location: ~/Library/Preferences/com.apple.dock.plist
@@ -344,15 +361,40 @@ Records pinned applications and recently used apps. Modifications to this file m
 
 #### 4.5.3 Spotlight Shortcuts
 
-Location: ~/Library/Application Support/com.apple.spotlight.Shortcuts
+Records terms the user has searched and launched via Spotlight, with timestamps. Useful for establishing what a user was actively searching for during an incident timeframe. Stored as a plist; location has moved across macOS releases — check all of the following, most recent first:
 
-Records terms the user has searched and launched via Spotlight, with timestamps. Useful for establishing what a user was actively searching for during an incident timeframe.
+| macOS Version | Path |
+|---|---|
+| ≥ 14 (Sonoma+; expected to still apply on Tahoe, unverified) | `~/Library/Group Containers/group.com.apple.spotlight/com.apple.spotlight.Shortcuts.v3` |
+| 11 – 13 | `~/Library/Application Support/com.apple.spotlight/com.apple.spotlight.Shortcuts.v3` |
+| 10.15 | `~/Library/Application Support/com.apple.spotlight/com.apple.spotlight.Shortcuts` |
+| 10.10 – 10.14 | `~/Library/Application Support/com.apple.spotlight.Shortcuts` |
+| ≤ 10.9 (Mavericks or older) | `~/Library/Preferences/com.apple.spotlight.plist` |
+
+Note: an earlier revision of this doc listed only the 10.10–10.14 path without version-scoping it — that path is not the current one for any actively-supported macOS release. Table above sourced directly from mac_apt's `spotlightshortcuts.py` plugin (`__Plugin_ArtifactOnly_Usage` docstring and `user_plist_rel_paths` tuple), verified 2026-08-21. The ≥14 path is mac_apt's newest documented entry and has not been independently confirmed against a live Tahoe system.
+
+Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) `SPOTLIGHTSHORTCUTS` plugin (`plugins/spotlightshortcuts.py`). See also: [mac_apt wiki — Search and Indexing](https://deepwiki.com/ydkhatri/mac_apt/5.4-search-and-indexing)
 
 ### 4.6 Saved Application State
 
 Location: ~/Library/Saved Application State/
 
 Per-app bundles storing window state, open documents, scroll positions, and UI context from the last session. Named <bundle-id>.savedState. Useful for reconstructing exactly what a user had open in an application at the time of their last session — a complement to KnowledgeC app usage data.
+
+#### 4.6.1 Terminal Saved State — Full Window Text Content
+
+Terminal's saved-state bundle is a high-value special case worth breaking out separately: unlike the generic per-app state covered above, it can contain the **full text content of terminal windows** — not just window geometry/metadata.
+
+| Detail | Value |
+|----|----|
+| Location | `~/Library/Saved Application State/com.apple.Terminal.savedState/` |
+| Files | `windows.plist` (per-window metadata + AES key references) and `data.data` (encrypted window records) |
+| Format | `data.data` records are AES-CBC encrypted per-window (key sourced from `windows.plist` via `NSWindowID` → `NSDataKey` mapping, zero IV); decrypted payload is an `NSKeyedArchiver` plist containing an `_NSWindow` object |
+| Contains | Window title (`NSTitle`), working directory (`Tab Working Directory URL` / `Tab Working Directory URL String`), and full tab text content (`Tab Contents` / `Tab Contents v2`) |
+
+- Can recover command output, pasted secrets, and full scrollback text that never touched shell history — this is a materially different (and often richer) artifact than `.bash_history`/`.zsh_history` (see Appendix C), since it captures on-screen content regardless of whether commands were logged
+- Only present if the user had Terminal open with unsaved/restorable windows at the time of last quit or system state capture — absence does not mean nothing was ever run, only that no window state was captured at last close
+- Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) `TERMINALSTATE` plugin (`plugins/terminalstate.py`) — decryption and field layout verified directly against plugin source 2026-08-21, not independently confirmed against a live system
 
 ### 4.7 QuarantineEvents Database
 
@@ -405,6 +447,81 @@ This database records the download URL, referring URL, application used, sender 
 #### 4.8.4 Other Browsers
 
 Brave, Microsoft Edge, Opera, and Vivaldi all share the same Chromium profile path structure as Chrome under ~/Library/Application Support/<BrowserName>/. Artifact names and schema are identical to Chrome for all major forensic tables (History, Cookies, Login Data, Web Data).
+
+### 4.9 Notification Center Database
+
+Records the actual content of notifications shown to the user — title, subtitle, message body, source app, and delivery timestamp — not just that a notification event occurred. Distinct from (and more detailed than) the passing `UserNotification` Biome stream and BTM "Notified" flag mentioned elsewhere in this document.
+
+Location has moved repeatedly across macOS releases; check the version-appropriate path:
+
+| macOS Version | Path |
+|---|---|
+| Sequoia (15)+ (expected to still apply on Tahoe, unverified) | `~/Library/Group Containers/group.com.apple.usernoted/db2/db` |
+| Yosemite – Sonoma (10.10 – 14) | `<DARWIN_USER_DIR>/com.apple.notificationcenter/db/db` (Yosemite/El Capitan/Sierra) or `<DARWIN_USER_DIR>/com.apple.notificationcenter/db2/db` (High Sierra+ — both may be present if the system was upgraded in place) |
+| Mavericks (10.9) or older | `~/Library/Application Support/NotificationCenter/<UUID>.db` |
+
+- Format: SQLite. Schema varies by version — High Sierra+ uses a `record`/`app` table pair with notification data stored as a plist blob in a `data` column (fields: `req.titl`, `req.subt`, `req.body`, `req.iden`); pre-High Sierra uses `presented_notifications`/`notifications`/`app_info` tables with an `NSKeyedArchiver`-style `$objects` array
+- Screen Time notifications (`com.apple.ScreenTimeNotifications`) are stored with placeholder tokens rather than literal text and require cross-referencing against `com.apple.ScreenTimeNotifications.bundle`'s localization strings to render human-readable content
+- `DARWIN_USER_DIR` is the per-user temp/cache directory (`/private/var/folders/<xx>/<yyyyyyy>/0/`) — same base directory referenced elsewhere in this document for other per-session caches
+- Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) `NOTIFICATIONS` plugin (`plugins/notifications.py`) — paths and schema notes verified directly against plugin source 2026-08-21, not independently confirmed against a live system
+
+### 4.10 QuickLook Thumbnail Cache
+
+A well-known but previously undocumented-in-this-framework artifact: macOS generates and caches a thumbnail preview for files a user has viewed (in Finder icon view, Quick Look preview, Spotlight results, etc.), and that cache can outlive the source file — recoverable visual evidence of a file's existence and appearance even after deletion. Only referenced elsewhere in this document as a bit flag (Section 5.3.1's xattr flags table, `0x00800 = quicklook`); this section covers the actual cache store.
+
+| Detail | Value |
+|----|----|
+| Location (macOS < 10.15) | `<DARWIN_USER_CACHE_DIR>/com.apple.QuickLook.thumbnailcache/` |
+| Location (macOS ≥ 10.15, incl. Big Sur+) | `<DARWIN_USER_CACHE_DIR>/com.apple.quicklook.ThumbnailsAgent/com.apple.QuickLook.thumbnailcache/` |
+| Files | `index.sqlite` (metadata: file name, folder, hit count, last-hit timestamp, dimensions, and the byte offset/length of the thumbnail within the data file) + `thumbnails.data` (raw bitmap data, carved using the offsets from `index.sqlite`) |
+| Format | SQLite index + raw bitmap blob store; carved images are BGRA or RGBA depending on OS version and must be reconstructed with the correct width (computed from `bytesperrow / (bitsperpixel/bitspercomponent)`, not a directly-stored field on newer schema versions) |
+
+- `DARWIN_USER_CACHE_DIR` is the same per-user cache base directory referenced for Notification Center (4.9) and other per-session caches — typically `/private/var/folders/<xx>/<yyyyyyy>/0/`
+- On macOS 10.15+, thumbnail records are keyed by file inode rather than a stored path — resolving inode → original file path requires cross-referencing the volume's APFS metadata (or the `Combined_Inodes` table if working from a mac_apt-processed image); a thumbnail with no resolvable inode is recovered as an "Unknown" entry, image intact but original filename lost
+- `hit_count` and `last_hit_date` provide a rough proxy for how often/recently a file was viewed, independent of any modification-time-based evidence
+- Because this is a **cache**, entries persist after the source file is deleted and are not necessarily cleared by normal file deletion — a materially different (and frequently missed) recovery path compared to Trash/FSEvents-based deleted-file evidence covered in Section 5.5
+- Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) `QUICKLOOK` plugin (`plugins/quicklook.py`) — paths, schema-version branching, and thumbnail-carving logic verified directly against plugin source 2026-08-21, not independently confirmed against a live system. Plugin author credits prior public research: [OSX-QuickLook-Parser (Mari DeGrazia)](https://github.com/mdegrazia/OSX-QuickLook-Parser), [Analysing the QuickLook Database in macOS — EasyMetadata (Dave)](http://www.easymetadata.com/2015/01/sqlite-analysing-the-quicklook-database-in-macos/)
+
+### 4.11 Powerlog — CurrentPowerlog.PLSQL
+
+Arguably the single richest pattern-of-life database on macOS, on par with or exceeding KnowledgeC (4.1) and Biome (4.2) in granularity — yet it was entirely absent from this document prior to this revision. Powerlog logs fine-grained per-app and per-subsystem activity primarily for power/battery accounting purposes, but as a side effect captures an extremely detailed activity timeline: app installs, launches, foreground/background transitions, screen state, battery level, network usage correlation, and dozens of other subsystem-specific event streams.
+
+| Detail | Value |
+|----|----|
+| Current log | `/private/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL*` |
+| Archived logs | `/private/var/db/powerlog/Library/BatteryLife/Archives/*.PLSQL.gz` — the device rotates the current log into a compressed daily archive, so a full activity timeline requires collecting **all** archive files, not just the current one |
+| Format | SQLite (despite the `.PLSQL` extension — it is a standard SQLite database) |
+| Table naming convention | `PL<Agent>_<EventType>_<Purpose>`, e.g. `PLAPPLICATIONAGENT_EVENTNONE_APPINFO`, `PLAPPLICATIONAGENT_EVENTFORWARD_APPLIFECYCLE`, `PLSCREENSTATEAGENT_EVENTFORWARD_SCREENSTATE` |
+
+**Critical timestamp gotcha:** raw `TIMESTAMP` values in Powerlog tables are frequently *not* directly usable Unix epoch time. They must be corrected by adding a per-record offset (`SYSTEM` column) sourced via join against `PLSTORAGEOPERATOR_EVENTFORWARD_TIMEOFFSET` — the corrected value is `DATETIME(TIMESTAMP + SYSTEM, 'UNIXEPOCH')`. Querying `TIMESTAMP` directly without this join can produce timestamps that are off by hours, or occasionally land in the future/past relative to the true event time. This is not optional — every reference query in the public tooling for this database performs this join.
+
+Tables of highest forensic interest (field names as observed; not exhaustive):
+
+| Table | Captures |
+|---|---|
+| `PLAPPLICATIONAGENT_EVENTNONE_APPINFO` | Installed/run application catalog — `NAME`, `EXECUTABLE`, `BUNDLEID`, `VERSION`/`SHORTVERSIONSTRING`, `BUILDMACHINEOSBUILD`, `ARCHITECTURE`. The `BUILDMACHINEOSBUILD` field can indicate whether a binary was built in an environment inconsistent with a legitimate release |
+| `PLAPPLICATIONAGENT_EVENTFORWARD_APPLIFECYCLE` | App launch/foreground/background/terminate events — `BUNDLEID`, `EVENT`, `PID`, `ASN` (Application Serial Number) and `PARENTASN`, letting you trace a launch chain (what spawned what) independent of standard process-tree telemetry |
+| `PLSCREENSTATEAGENT_EVENTFORWARD_SCREENSTATE` | Per-app screen/display state — `APPROLE`, `DISPLAY`, `ORIENTATION`, `SCREENWEIGHT` — useful for establishing whether an app was actually visible/foregrounded to the user at a given time, not just running |
+| `PLSTORAGEOPERATOR_EVENTFORWARD_ACTIVITYSTATES` | Generic activity-ID/state transitions used across multiple subsystems |
+| Battery-level tables | `LEVEL`, `RAWLEVEL`, `ISCHARGING`, `FULLYCHARGED` fields — corroborating evidence for physical device state/timeline (e.g., confirming the device was actually in use, not just powered on, at a given time) |
+
+- Because this is a SIP-relevant location, live acquisition of `/private/var/db/powerlog/` may require SIP to be disabled or Full Disk Access equivalent, similarly to the KnowledgeC system-level path (see Section 4.1 note below)
+- Cross-reference against KnowledgeC (4.1) and Biome (4.2) — the three databases overlap in what they record (app usage in particular) but differ in retention window, granularity, and schema stability across OS versions; agreement across all three strengthens a finding, disagreement is itself worth investigating
+- Standard tooling: [APOLLO — Apple Pattern of Life Lazy Output'er (Sarah Edwards / mac4n6.com)](https://github.com/mac4n6/APOLLO) is the de facto reference parser and query library for this database (originally developed for iOS, extended to cover macOS versions 10.13–10.16+); table names, the timestamp-offset join pattern, and field names above verified directly against APOLLO's published query modules (`powerlog_app_info_macos.txt`, `powerlog_app_lifecycle.txt`, `powerlog_app_usage.txt`, `powerlog_activity_states.txt`) 2026-08-21, not independently confirmed against a live system
+- Collection path confirmed via [UAC (Unix-like Artifacts Collector)](https://github.com/tclahr/uac) `artifacts/files/system/powerlog.yaml`
+
+### 4.12 CoreAnalytics
+
+A lighter-weight, complementary source to Powerlog/KnowledgeC/Biome — CoreAnalytics captures system-usage and application-execution history as individual diagnostic report files rather than a queryable database.
+
+| Detail | Value |
+|----|----|
+| Location | `/Library/Logs/DiagnosticReports/` |
+| Files | `*.core_analytics` |
+
+- Files in this location are also where XProtect diagnostic `.diag` files live (see 7.6.1) — when triaging `DiagnosticReports`, don't stop at the first matching pattern you're looking for; both artifact types coexist in the same directory
+- Not yet independently verified what specific fields/schema each `.core_analytics` file contains beyond "system usage and application execution history" — treat as a collection target requiring hands-on schema review, not yet a fully documented artifact in this framework
+- Source: [UAC](https://github.com/tclahr/uac) `artifacts/files/system/coreanalytics.yaml`, 2026-08-21, unverified against a live system
 
 ## 5. Phase 3 — File System & Storage Artifacts
 
@@ -566,6 +683,23 @@ If Time Machine backups are present, they represent a goldmine of historical evi
 
 - Deleted files may be recoverable from earlier snapshots even if no longer present on the live system
 
+### 5.9 DocumentRevisions & Versions Store
+
+Backs macOS's Auto Save / Versions feature (Time Machine-independent, per-file version history). A significant and under-utilized artifact: it can hold prior revisions of a file's content — including deleted files' revision data that may still exist in chunk storage even after the live file and its database record are gone.
+
+| Detail | Value |
+|----|----|
+| Root location | `/System/Volumes/Data/.DocumentRevisions-V100/` (also check plain `/.DocumentRevisions-V100/` — path prefix varies with acquisition/mount mode) |
+| Revision database | `.DocumentRevisions-V100/db-V1/db.sqlite` — key tables `generations` (one row per saved revision, with `generation_add_time`, `generation_path`, `generation_size`) and `files` (`file_path`, `file_inode`, `file_last_seen`) |
+| Chunk metadata database | `.DocumentRevisions-V100/.cs/ChunkStoreDatabase` — key tables `CSStorageChunkListTable` (maps a revision's storage inode to an ordered list of chunk row IDs) and `CSChunkTable` (per-chunk file location, offset, length, content-hash `cid`) |
+| Actual revision content | `.DocumentRevisions-V100/.cs/ChunkStorage/` — content-addressed chunk files nested 4 directory levels deep (`xx/yy/zz/<numeric-filename>`); a single revision's content may be split across multiple chunk files and must be reassembled in order |
+
+- Extended attributes `com.apple.genstore.origdisplayname` and `com.apple.genstore.origposixname` on a generation-path entry (if it still exists on disk) recover the file's original display/POSIX name even if the parent record's path resolution fails
+- QuickLook thumbnails of versioned files can themselves be stored as a revision (`generation_path` ending in `:QLThumbnailAdditionName`, format `.png` on newer systems, `.jpeg` on older) — meaning a file's visual thumbnail can be recoverable from this store independent of the QuickLook Thumbnail Cache covered in Section 4.10
+- Chunks not referenced by any current `generations` row (**orphan chunks**) can still be extracted directly from `ChunkStorage` by walking the raw chunk-file format — this is the mechanism by which deleted files' version content can survive purely at the chunk level, unlinked from any live database record
+- Prior public research: [Managing macOS versioning and the DocumentRevisions-V100 folder — The Eclectic Light Company](https://eclecticlight.co/2025/09/08/managing-macos-versioning-and-the-documentrevisions-v100-folder/), [File Versioning in Mac OS X — VerSprite](https://versprite.com/vs-labs/file-versioning-mac-os-x/)
+- Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) `DOCUMENTREVISIONS` plugin (`plugins/documentrevisions.py`) — schema, chunk-reassembly logic, and orphan-chunk extraction verified directly against plugin source 2026-08-21, not independently confirmed against a live system
+
 ## 6. Phase 4 — Network & Communications Artifacts
 
 ### 6.1 Network Configuration & History
@@ -581,6 +715,8 @@ If Time Machine backups are present, they represent a goldmine of historical evi
 - Hosts file modifications: /etc/hosts — check for evidence of DNS spoofing or C2 evasion
 
 - Network app usage: /private/var/networkd/db/netusage.sqlite — per-process byte counts with timestamps
+
+- Cellular/wireless data usage (situational — cellular-capable Macs only): /private/var/wireless/Library/Databases/DataUsage.sqlite — per-app cellular data usage, distinct from the WiFi/Ethernet-focused netusage.sqlite above (source: [UAC](https://github.com/tclahr/uac) `artifacts/files/system/network_application_usage.yaml`, 2026-08-21, unverified against a live system)
 
 ### 6.2 iMessage & SMS/MMS
 
@@ -649,6 +785,8 @@ AirDrop uses Bluetooth LE and Wi-Fi Direct for peer-to-peer file transfer. Foren
 
 - Bluetooth system log: /Library/Logs/DiagnosticReports/ may contain Bluetooth connection records
 
+- Bluetooth Low Energy (BLE) device cache: `/Library/Bluetooth/com.apple.MobileBluetooth.ledevices.*` — cached records of observed BLE devices (identifiers, metadata, last-seen activity), separate from the paired-device plists (`com.apple.Bluetooth.plist`, `com.apple.MobileBluetooth.devices.plist`). Source: [UAC](https://github.com/tclahr/uac) `artifacts/files/system/bluetooth.yaml`, 2026-08-21, unverified against a live system
+
 ### 6.8 Unified Logs — Network Events
 
 The Unified Logging system (introduced in macOS 10.12) is an extremely rich source of network-related forensic evidence. Key subsystems to query:
@@ -663,18 +801,68 @@ The Unified Logging system (introduced in macOS 10.12) is an extremely rich sour
 
 Use the log command-line tool or Console.app to query Unified Logs. Note: live logs are stored in /var/db/diagnostics/ but require macOS tools to parse correctly.
 
+### 6.9 Remote Access Artifacts (Screen Sharing, Apple Remote Desktop, Microsoft RDC)
+
+Prior to this revision, this document had **no coverage of remote-access-client artifacts** — a real gap for lateral-movement and unauthorized-remote-access investigations. Three distinct clients/services are documented here; all sourced directly from mac_apt plugin code, unverified against a live system.
+
+#### 6.9.1 Screen Sharing (built-in macOS client)
+
+macOS's native Screen Sharing app maintains a connection history — a durable record of what remote hosts a user has connected to, independent of whether the session left any other trace.
+
+| Detail | Value |
+|----|----|
+| Location | `~/Library/Containers/com.apple.ScreenSharing/Data/Library/Preferences/com.apple.ScreenSharing.plist` |
+| Format | Binary plist; connection details are stored in a nested serialized plist under the `connectionsStore` key |
+| Contains | Per-host UUID, IP address, display name, login username, connection group name, and last-connected timestamp |
+
+- The `sessionMetadatas`/`connectionDetails`/`connectionGroups` sub-structures must all be present to fully resolve a connection record — a partially-populated plist may still contain a host UUID without a resolvable timestamp or group
+- Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) `SCREENSHARING` plugin (`plugins/screensharing.py`)
+
+#### 6.9.2 Apple Remote Desktop (ARD) — cached app usage
+
+Distinct from Screen Sharing above — ARD is Apple's enterprise remote-management product, and its cache tracks **application usage during a remote session**, not just the connection itself.
+
+| Detail | Value |
+|----|----|
+| Location | `/private/var/db/RemoteManagement/caches/UserAcct.tmp` (session start/end + UID), `/private/var/db/RemoteManagement/caches/AppUsage.plist` and `AppUsage.tmp` (per-app runtime during sessions) |
+| Format | Binary plist |
+| Contains | Session start/end time and UID (UserAcct.tmp); app name, path, launch time, run duration, and whether the app was frontmost during an ARD-managed session (AppUsage) |
+
+- Requires root to access (`/private/var/db/` is root-owned)
+- Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) `ARD` plugin (`plugins/ard.py`)
+
+#### 6.9.3 Microsoft Remote Desktop Client (macOS)
+
+| Detail | Value |
+|----|----|
+| Database location | `~/Library/Containers/com.microsoft.rdc.macos/Data/Library/Application Support/com.microsoft.rdc.macos/com.microsoft.rdc.application-data.sqlite` |
+| Thumbnails location | `~/Library/Containers/com.microsoft.rdc.macos/Data/Library/Application Support/com.microsoft.rdc.macos/SupportingImages/` — TIFF files named by Host_ID |
+| Format | SQLite (Core Data-backed, `Z`-prefixed tables) |
+| Key Tables | `ZBOOKMARKENTITY` (saved RDP connection profiles: hostname, friendly name, group, credential config), `ZCONNECTIONTIMEENTITY` (actual connection history: start time, minutes connected) |
+| Contains | Target hostname, friendly display name, group/folder name, credential-use policy (ask each time vs. stored account), stored username, whether a nil/blank password was configured, folder-redirection mappings, and per-connection start time + duration |
+
+- Session thumbnails (screen captures of the remote desktop at disconnect) are recoverable and correlate to a specific `Host_ID` in the database — useful for visually confirming what was on-screen during a remote session
+- `ZBOOKMARKENTITY` alone shows *configured* connections (may never have been used); cross-reference against `ZCONNECTIONTIMEENTITY` to confirm actual connection activity and duration
+- Parser: [mac_apt](https://github.com/ydkhatri/mac_apt) `MSRDC` plugin (`plugins/msrdc.py`). Note: the plugin's own published usage string is a copy-paste error (it currently reads "XProtect diagnostic files...") — the paths above were taken from the plugin's actual `Plugin_Start` code, not its docstring; flagging in case this is fixed upstream and the string later reads correctly
+
 ## 7. Phase 5 — System & Security Artifacts
 
 ### 7.1 Unified Logs — Overview
 
 The Unified Logging system replaced ASL (Apple System Log) and syslog in macOS 10.12 Sierra. It is the primary source of system-level forensic evidence on modern macOS systems.
 
+> **Correction (2026-08-21):** an earlier revision of this section mislabeled `/private/var/db/uuidtext/` as an "archive location." It is not an archive of older log entries — it is the **symbol/format-string store** that Unified Logging references to resolve human-readable message text out of the compact `.tracev3` files. Both directories are collected together for the current log; this revision also adds `timesync`, which was previously missing entirely. Paths verified against [UAC](https://github.com/tclahr/uac)'s `artifacts/files/logs/macos_unified_logs.yaml` collector definition, 2026-08-21.
+
 | Detail | Value |
 |----|----|
-| Live log location | /var/db/diagnostics/ (tracev3 binary format) |
-| Archive location | /var/db/uuidtext/ |
+| Log entries | `/private/var/db/diagnostics/*.tracev3` — compact binary log records |
+| Symbol/format-string store | `/private/var/db/uuidtext/` — required to resolve message format strings referenced by `.tracev3` entries; **not** an archive of old logs |
+| Timesync files | `/private/var/db/diagnostics/timesync/` — **required** to convert the relative/boot-relative timestamps embedded in `.tracev3` records into absolute wall-clock time; a `.tracev3` collected without its matching timesync data cannot be timestamp-correlated correctly |
+| Legacy ASL (pre-10.12 systems only) | `/private/var/log/asl.db`, `/private/var/log/asl.log`, `/private/var/log/asl/*` — collect if imaging a system that predates Sierra, or that was upgraded from one and retains legacy logs |
 | Retention | Varies; typically 7 days of fine-grained logs, longer for compressed archives. Logs cycle quickly — collect rapidly. |
 | Parsing tool | log (built-in CLI), Ulbow (GUI), mac_apt UNIFIEDLOGS plugin |
+
+**Collection reminder:** always collect `.tracev3`, `uuidtext`, and `timesync` together as a set. Collecting only the `.tracev3` files (a common mistake) yields log records that cannot be fully decoded or accurately timestamped.
 
 **BASH — UNIFIED LOG QUERIES**
 
@@ -808,6 +996,8 @@ Multiple versioned .btm files may coexist on a single system — artefacts of pr
 
 - Launchctl scheduled tasks: check LaunchDaemon/Agent plists for StartCalendarInterval or StartInterval keys
 
+- One-time scheduled jobs (`at`, distinct from recurring cron jobs): /private/var/at — source: [UAC](https://github.com/tclahr/uac) `artifacts/files/system/job_scheduler.yaml`, 2026-08-21, unverified against a live system
+
 ### 7.4 Authentication & Authorization Artifacts
 
 #### 7.4.1 Authentication Logs
@@ -831,6 +1021,8 @@ Multiple versioned .btm files may coexist on a single system — artefacts of pr
 
 Even without decryption, keychain metadata (service names, account names, creation dates, modification dates) is forensically useful. The chainbreaker tool (github.com/n0fate/chainbreaker) can extract this metadata. The presence of specific service names may reveal which credentials a user had stored.
 
+**iCloud Keychain trusted-device list:** `~/Library/Application Support/com.apple.akd/devicelist.db` — records trusted device entries used by iCloud Keychain sync (managed by the `akd` daemon). Distinct from the login/system keychain files above; useful for establishing which other Apple devices were trusted to sync keychain data with this Mac. Source: [UAC](https://github.com/tclahr/uac) `artifacts/files/system/macos_keychain_devicelist.yaml`, 2026-08-21, unverified against a live system.
+
 ### 7.5 Local User Accounts (dslocal)
 
 | Detail | Value |
@@ -850,7 +1042,48 @@ Evidence of SIP being disabled is a significant finding, as it may indicate an a
 
 - Gatekeeper quarantine override evidence: Unified Logs, process syspolicyd
 
-- XProtect detection events: /Library/Logs/DiagnosticReports/ and Unified Logs, subsystem com.apple.XProtect
+#### 7.6.1 XProtect & MRT (Malware Removal Tool)
+
+Expanded 2026-08-21 from a single Unified Logs reference — XProtect has two independent evidence sources beyond log subsystem `com.apple.XProtect`, plus version/definition metadata for confirming detection capability at time of incident.
+
+| Detail | Value |
+|----|----|
+| XProtect diagnostic files | `~/Library/Logs/DiagnosticReports/XProtect_YYYY-MM-DD-hhmmss_<Hostname>.diag` (plist) — written when the legacy signature-based scanner acts on a quarantined file |
+| XProtect Behavior Service (XPBS) database | `/private/var/protected/xprotect/XPdb` (SQLite, `events` table) — the newer heuristic/behavioral detection layer, independent of the legacy signature scanner above |
+| Bundle/version metadata | `/private/var/protected/xprotect/XProtect.bundle/Contents/Info.plist`, `/Library/Apple/System/Library/CoreServices/XProtect.bundle/Contents/Info.plist`, `/Library/Apple/System/Library/CoreServices/XProtect.app/Contents/Info.plist`, `/Library/Apple/System/Library/CoreServices/MRT.app/Contents/Info.plist` |
+
+- **Diagnostic file contents:** `XProtectSignatureName` (which signature matched), `UserAction` (what the user did — allow/block/etc.), plus the same quarantine metadata as QuarantineEvents (4.7): `LSQuarantineAgentBundleIdentifier`, `LSQuarantineDataURL`, `LSQuarantineOriginURL`, `LSQuarantineTimeStamp`. Filename embeds the detection timestamp directly.
+- **XPBS `events` table contents:** per-event code-signing identity for **both** the executing binary and the "responsible" (triggering/parent) process — `exec_path`, `exec_cdhash`, `exec_signing_id`, `exec_team_id`, `exec_sha256`, `exec_is_notarized`, plus the equivalent `responsible_*` fields, `violated_rule`, and whether the event was `reported` to Apple. This is materially richer than the legacy diagnostic files — it can confirm whether a flagged binary was signed/notarized and identify what parent process triggered the behavioral rule violation.
+- **Version/bundle metadata use case:** confirms exactly which XProtect/MRT definition version was active at the time of an incident — relevant for assessing whether a given piece of malware could plausibly have been caught by signature-based detection at that point in time, versus genuinely being novel/undetected
+- Parsers: [mac_apt](https://github.com/ydkhatri/mac_apt) `XPROTECT` plugin (`plugins/xprotect.py`) for diagnostic files and XPBS database (paths/schema verified against plugin source, 2026-08-21); bundle version paths from [UAC](https://github.com/tclahr/uac) `artifacts/files/system/xprotect.yaml`, 2026-08-21. Both unverified against a live system.
+
+#### 7.6.2 BSM Audit Trail
+
+A separate, parallel logging subsystem to Unified Logs (7.1) — the BSD/Sun-derived Basic Security Module (BSM) audit trail records lower-level, security-relevant kernel events (syscalls, authentication, privilege use) independent of Apple's own Unified Logging infrastructure.
+
+| Detail | Value |
+|----|----|
+| Location | `/private/var/audit/` |
+| Format | Binary BSM audit trail files (standard `praudit`-readable format, shared lineage with Solaris/FreeBSD/other BSD-derived audit implementations) |
+| Parsing tool | `praudit` (built-in CLI) |
+
+- Distinct value from Unified Logs: BSM auditing predates Unified Logging and operates at a different layer (closer to raw syscall/kernel audit events per the historical BSM design); may retain evidence in scenarios where Unified Log retention has already cycled out the relevant window, or where BSM auditing was specifically configured for compliance reasons (`/etc/security/audit_control`)
+- Confirm auditd is actually enabled/configured before relying on this source — presence of the directory does not guarantee meaningful content if auditing was never configured beyond OS defaults
+- Source: [UAC](https://github.com/tclahr/uac) `artifacts/files/logs/macos.yaml`, 2026-08-21, unverified against a live system
+
+### 7.7 FileVault Recovery & Preboot Artifacts
+
+Prior to this revision, this document had no coverage of FileVault/encryption-recovery artifacts.
+
+| Detail | Value |
+|----|----|
+| Location | `/System/Volumes/Preboot/` (the APFS Preboot volume — present on all Apple Silicon Macs and most modern Intel Macs; boots before the main encrypted data volume unlocks) |
+| Files of interest | `AdminUserRecoveryInfo.plist`, `CryptoUserInfo.plist` |
+| Access | Preboot is a separate APFS volume from the main system volume — requires mounting/acquiring it explicitly, not just the primary system volume |
+
+- These files hold FileVault-related recovery and admin-user account metadata staged in the unencrypted Preboot volume so the system can present a valid login/recovery UI before the encrypted volume is unlocked
+- Relevant to investigations involving encryption status disputes, recovery-key usage claims, or establishing which admin accounts were FileVault-enrolled at a given point in time
+- Source: [UAC](https://github.com/tclahr/uac) `artifacts/files/system/recovery_account_info.yaml`, 2026-08-21, unverified against a live system — field-level schema of these plists not yet documented here, verify structure directly on acquisition
 
 ## 8. Phase 6 — Cloud & iCloud Artifacts
 
@@ -1172,22 +1405,26 @@ macOS 26 (Tahoe) introduces a significant visual redesign ('Liquid Glass'), expa
 
 Clipboard History is one of the most significant new forensic artifacts introduced in Tahoe. In all prior versions of macOS, the clipboard was volatile — only the most recently copied item was retained, and only in memory. There was no persistent on-disk record of clipboard activity.
 
-In macOS 26, Clipboard History maintains a persistent, searchable log of recently copied items, integrated with Spotlight.
+In macOS 26, Clipboard History maintains a persistent, searchable log of recently copied items. It is **off by default** and is accessed via a dedicated Clipboard pane (Cmd+Space → Cmd+4), not general Spotlight text search.
+
+**Enablement:**
+- System Settings → Spotlight → "Clipboard Search" toggle, or
+- The in-Spotlight first-use prompt (offered the first time a user opens the Clipboard pane)
+
+Because the feature is opt-in, **absence of clipboard history on a given system may indicate it was never enabled, not that it was cleared.** Verify enablement state before an examiner's report characterizes an empty result as evidence of deliberate clearing.
 
 | Detail | Value |
 |----|----|
-| Expected location | ~/Library/Application Support/com.apple.ClipboardHistory/ (preliminary — validate on live system) |
-| Format | SQLite or binary plist — confirm with direct inspection post-acquisition |
-| Spotlight index | ~/Library/Metadata/CoreSpotlight/ (entries may persist here after clipboard clear) |
+| On-disk location | Unconfirmed — a previously documented path (`~/Library/Application Support/com.apple.ClipboardHistory/`) was tested and confirmed **not** to exist on a live macOS 26 system (2026-08-21). Treat as unlocated pending further testing. |
+| Format | SQLite or binary plist — confirm with direct inspection post-acquisition, once the actual location is identified |
+| Retention window | Disputed/unconfirmed — figures cited elsewhere range from ~8 hours to ~30 days; treat as an open question rather than citing either figure until independently verified |
 | Tool support | Emerging — validate that your toolset has been updated for Tahoe before relying on automated parsing |
 
-- May contain copied text, document excerpts, command-line output, URLs, passwords, and code snippets
+- May contain copied text, document excerpts, command-line output, URLs, passwords, and code snippets — **with the exception of items copied by apps that mark their pasteboard writes as concealed or transient** (the `org.nspasteboard.ConcealedType` / `org.nspasteboard.TransientType` convention honored by most password managers, e.g. 1Password, Bitwarden); such items are expected to be excluded from Clipboard History and should not be assumed present
 
 - Provides direct evidence of user intent — what a user deliberately copied is often more probative than what was merely opened
 
-- Could reveal staged data prior to exfiltration (copied credentials, internal documents)
-
-- Because it is Spotlight-indexed, residual evidence may persist in Spotlight's metadata stores even after manual clearing
+- Could reveal staged data prior to exfiltration (copied credentials, internal documents) — **though see the concealed/transient caveat above: credentials copied via a compliant password manager will likely not appear here**
 
 ### A.3 FaceTime — Restructured Databases
 
@@ -1410,7 +1647,16 @@ arp -a > ~/liveresponse/arp.txt
 sudo lsof -nPl > ~/liveresponse/lsof_all.txt
 sudo lsof -nPli > ~/liveresponse/lsof_network.txt
 sudo lsof -U > ~/liveresponse/lsof_unix_sockets.txt
+# Login session history (reads utmpx/wtmp)
+last > ~/liveresponse/last.txt
+# Live file-system activity trace — NOTE: this is a timed capture, not an instant
+# snapshot; run for a bounded window (e.g. `timeout 30 fs_usage ...`) since it
+# streams continuously and will not exit on its own
+sudo fs_usage -w -f filesys > ~/liveresponse/fs_usage.txt &
+sleep 30 && kill %1
 ```
+
+> Added 2026-08-21 (`last`, `fs_usage`) per [UAC](https://github.com/tclahr/uac)'s live_response collector definitions (`artifacts/live_response/system/last.yaml`, `artifacts/live_response/storage/fs_usage.yaml`), unverified against a live system.
 
 ### D.2 System & Kernel State
 
@@ -1432,7 +1678,13 @@ system_profiler > ~/liveresponse/system_profiler.txt
 hostinfo > ~/liveresponse/hostinfo.txt
 sw_vers > ~/liveresponse/sw_vers.txt
 sysctl -a > ~/liveresponse/sysctl.txt
+# Virtual memory / swap pressure statistics
+vm_stat > ~/liveresponse/vm_stat.txt
+# Kernel ring buffer (hardware/driver/panic evidence)
+dmesg > ~/liveresponse/dmesg.txt
 ```
+
+> Added 2026-08-21 (`vm_stat`, `dmesg`) per [UAC](https://github.com/tclahr/uac)'s live_response collector definitions (`artifacts/live_response/system/vm_stat.yaml`, `artifacts/live_response/hardware/dmesg.yaml`), unverified against a live system.
 
 ### D.3 Storage & Volume State
 
