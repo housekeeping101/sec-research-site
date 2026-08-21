@@ -24,6 +24,8 @@ A living index of all research notes in the vault. Updated each time a new note 
 | [[Attack Techniques/macOS Gaslight Backdoor\|macOS Gaslight Backdoor]] | T1123, T1115, T1056.004, T1571, T1008, T1543.001, T1140, T1027, T1020, T1059.004 | macOS | 2026-07-10 |
 | [[Attack Techniques/macOS TCC Manipulation via AppleScript\|macOS TCC Manipulation via AppleScript]] | T1566.001, T1059.002, T1564.004, T1027, T1547, T1217, T1071.001, T1547.015 | macOS | 2026-07-25 |
 | [[Attack Techniques/Overlord RAT via Fake Zoom Installer\|Overlord RAT via Fake Zoom Installer]] | T1204.002, T1027, T1140, T1036.005, T1547.014, T1059.004, T1082, T1071.001, T1056.001, T1113, T1123, T1005, T1041 | macOS, Windows | 2026-08-13 |
+| [[Attack Techniques/TryCloudflare Tunnel Abuse for RAT Delivery\|TryCloudflare Tunnel Abuse for RAT Delivery]] | T1566.001, T1204.002, T1027.012, T1036, T1218, T1059.003, T1059.006, T1055, T1620, T1547.001, T1572, T1071.001, T1041 | Windows | 2026-08-21 |
+| [[Attack Techniques/Cloudflare Workers Dead-Drop Resolver C2\|Cloudflare Workers Dead-Drop Resolver C2]] | T1566.002, T1021.002, T1037.001, T1574.002, T1140, T1132, T1071.001, T1008, T1550.001, T1649 | Windows, Cloud | 2026-08-21 |
 | [[Attack Techniques/ClickFix\|ClickFix]] | — | Windows, Linux | — |
 | [[Attack Techniques/ClickFix macOS via Script Editor\|ClickFix macOS via Script Editor]] | T1204.001, T1059.004, T1140, T1105, T1218.005 | macOS | 2026-04-10 |
 | [[Attack Techniques/Linux Rootkit\|Linux Rootkit]] | — | Linux | — |
@@ -43,6 +45,8 @@ A living index of all research notes in the vault. Updated each time a new note 
 | [[Malware & TTPs/macOS Gaslight Backdoor - Research Extraction\|macOS Gaslight Backdoor]] | T1123, T1115, T1056.004, T1571, T1008, T1543.001, T1140, T1027, T1020, T1059.004 | macOS | 2026-07-10 |
 | [[Malware & TTPs/macOS TCC Manipulation - Research Extraction\|macOS TCC Manipulation]] | T1566.001, T1059.002, T1564.004, T1027, T1547, T1217, T1071.001, T1547.015 | macOS | 2026-07-25 |
 | [[Malware & TTPs/Overlord RAT via Fake Zoom Installer - Research Extraction\|Overlord RAT via Fake Zoom Installer]] | T1204.002, T1027, T1140, T1036.005, T1547.014, T1059.004, T1082, T1071.001, T1056.001, T1113, T1123, T1005, T1041 | macOS, Windows | 2026-08-13 |
+| [[Malware & TTPs/TryCloudflare Tunnel Abuse for RAT Delivery - Research Extraction\|TryCloudflare Tunnel Abuse for RAT Delivery]] | T1566.001, T1204.002, T1027.012, T1036, T1218, T1059.003, T1059.006, T1055, T1620, T1547.001, T1572, T1071.001, T1041 | Windows | 2026-08-21 |
+| [[Malware & TTPs/Cloudflare Workers Dead-Drop Resolver C2 - Research Extraction\|Cloudflare Workers Dead-Drop Resolver C2]] | T1566.002, T1021.002, T1037.001, T1574.002, T1140, T1132, T1071.001, T1008, T1550.001, T1649 | Windows, Cloud | 2026-08-21 |
 
 ---
 
@@ -63,6 +67,8 @@ A living index of all research notes in the vault. Updated each time a new note 
 | [[20 - Areas/Threat Hunting/Hunt - macOS Gaslight Backdoor\|Hunt - macOS Gaslight Backdoor]] | Active | T1123, T1115, T1056.004, T1571, T1543.001, T1020 | macOS | 2026-07-10 |
 | [[20 - Areas/Threat Hunting/Hunt - macOS TCC Manipulation\|Hunt - macOS TCC Manipulation]] | Active | T1566.001, T1059.002, T1547, T1217, T1071.001, T1547.015 | macOS | 2026-07-25 |
 | [[20 - Areas/Threat Hunting/Hunt - Overlord RAT via Fake Zoom Installer\|Hunt - Overlord RAT via Fake Zoom Installer]] | Active | T1204.002, T1027, T1036.005, T1547.014, T1071.001, T1056.001, T1041 | macOS, Windows | 2026-08-13 |
+| [[20 - Areas/Threat Hunting/Hunt - TryCloudflare Tunnel Abuse for RAT Delivery\|Hunt - TryCloudflare Tunnel Abuse for RAT Delivery]] | Active | T1566.001, T1204.002, T1055, T1620, T1547.001, T1572, T1071.001 | Windows | 2026-08-21 |
+| [[20 - Areas/Threat Hunting/Hunt - Cloudflare Workers Dead-Drop Resolver C2\|Hunt - Cloudflare Workers Dead-Drop Resolver C2]] | Active | T1566.002, T1021.002, T1574.002, T1071.001, T1550.001, T1649 | Windows, Cloud | 2026-08-21 |
 
 ---
 
@@ -174,6 +180,16 @@ Notes created together as part of a single research session are grouped here for
 - [[Malware & TTPs/Overlord RAT via Fake Zoom Installer - Research Extraction|1. Research Extraction]] — full IOCs, .NET 10 cross-platform downloader mechanics, garble-obfuscated Go agent capabilities, FlexibleFerret LaunchAgent-label overlap
 - [[Attack Techniques/Overlord RAT via Fake Zoom Installer|2. TTP Note]] — step-by-step 8-stage attack chain, MITRE mapping, CrowdStrike FQL and Databricks SQL query stubs
 - [[20 - Areas/Threat Hunting/Hunt - Overlord RAT via Fake Zoom Installer|3. Hunt Hypothesis]] — 8-step hunt plan targeting com.zoom LaunchAgent masquerading, embedded PE-in-Mach-O artifacts, C2 domain/port traffic, and Windows parity checks
+
+### Cloudflare Infrastructure Abuse (2026-08-21)
+> Sources: Securonix — Tim Peck, Analyzing SERPENTINE#CLOUD; CyCraft — Infrastructure-Less Adversary: C2 Laundering via Dead-Drop Resolvers (JSAC 2026); SOCPrime/ESET — Gamaredon in 2025
+> Two related but distinct techniques abusing different Cloudflare products, researched together from a single captured lead:
+- [[Malware & TTPs/TryCloudflare Tunnel Abuse for RAT Delivery - Research Extraction|1a. Research Extraction — TryCloudflare Tunnel Abuse]] — SERPENTINE#CLOUD campaign, full 5-stage attack chain (LNK→WSF→BAT→Python→Donut), Early Bird APC injection, IOCs
+- [[Attack Techniques/TryCloudflare Tunnel Abuse for RAT Delivery|1b. TTP Note]] — step-by-step attack chain, MITRE mapping, CrowdStrike FQL and Databricks SQL query stubs
+- [[20 - Areas/Threat Hunting/Hunt - TryCloudflare Tunnel Abuse for RAT Delivery|1c. Hunt Hypothesis]] — 7-step hunt plan targeting WebDAV/robocopy tunnel traffic, WSH execution, Early Bird APC signatures
+- [[Malware & TTPs/Cloudflare Workers Dead-Drop Resolver C2 - Research Extraction|2a. Research Extraction — Cloudflare Workers Dead-Drop Resolver C2]] — Taiwan-targeting APT campaign (CyCraft/JSAC 2026), GRAPHBROTLI/GRAPHRELOOK/RCREMARK malware, AD CS ESC1/3/8/11 abuse, ephemeral GPO tampering; Gamaredon convergent-adoption context
+- [[Attack Techniques/Cloudflare Workers Dead-Drop Resolver C2|2b. TTP Note]] — step-by-step attack chain, MITRE mapping, CrowdStrike FQL and Databricks SQL query stubs
+- [[20 - Areas/Threat Hunting/Hunt - Cloudflare Workers Dead-Drop Resolver C2|2c. Hunt Hypothesis]] — 7-step hunt plan targeting Graph API OAuth abuse, Workers subdomain traffic, DLL side-loading, ADCS NTLM relay, GPO script tampering
 
 ---
 
