@@ -32,7 +32,12 @@ aws ssm describe-parameters
 ```
 
 ### Step 2 — Assess Permissions
-Not all credentials can retrieve all secrets. Attackers check what they can access and identify high-value targets by name and description.
+Not all credentials can retrieve all secrets. Before assuming `secretsmanager:ListSecrets`/`GetSecretValue` will work at all, check the current identity's own IAM policy — this also often reveals the exact secret ARNs (and therefore secret count) the identity is scoped to, before ever calling Secrets Manager:
+```bash
+aws iam list-user-policies --user-name <user>                       # inline policy NAMES
+aws iam get-user-policy --user-name <user> --policy-name <policy>    # inline policy CONTENT — look for secretsmanager:* actions and their Resource ARNs
+```
+A policy scoped to specific resource ARNs (e.g. `arn:aws:secretsmanager:us-east-1:<acct>:secret:myapp-password*`) tells you in advance how many secrets exist and what they're likely named, before running any Secrets Manager enumeration call.
 
 ### Step 3 — Bulk Retrieval
 Mass-dump all accessible secrets:
@@ -53,6 +58,8 @@ Retrieved secrets enable:
 - **API authentication** — third-party service tokens
 - **Further IAM escalation** — credentials for other AWS accounts/services
 - **Lateral movement** — credentials for internal systems
+
+Secret values aren't always plaintext on retrieval — API keys/tokens are frequently base64-encoded within the `SecretString`. A quick `echo <value> | base64 -d` (or any base64 decode tool) recovers the real value; this isn't encryption, just encoding, so it adds no real security but is common enough to expect as a step.
 
 ---
 
@@ -86,6 +93,9 @@ Common naming conventions attackers target:
 | `secretsmanager:DescribeSecret` | Get metadata (tags, rotation config, KMS key) |
 | `secretsmanager:GetSecretValue` | **Retrieve the actual secret value** |
 | `secretsmanager:ListSecretVersionIds` | Enumerate versions (useful if current value rotated) |
+| `secretsmanager:GetResourcePolicy` | Check whether a resource-based policy is attached to the secret |
+
+> **Identity-based vs. resource-based policies**: an identity-based policy (attached to the calling user/role) granting `GetSecretValue` is not the whole story — Secrets Manager also supports a **resource-based policy** on the secret itself, specifying who/what can access it. Having identity-based access does not guarantee the resource policy allows it (and vice versa); check both with `get-resource-policy` before assuming access will succeed or fail. Many secrets have no resource policy set at all (it's optional), which itself is worth noting as a missed defense-in-depth opportunity.
 
 #### Parameter Store
 | Permission | Action |
@@ -111,6 +121,9 @@ aws secretsmanager get-secret-value --secret-id <secret-name-or-arn>
 
 # Enumerate all version IDs (useful if current value was rotated)
 aws secretsmanager list-secret-version-ids --secret-id <secret-name-or-arn>
+
+# Check for a resource-based policy on the secret (may be blank — see note below)
+aws secretsmanager get-resource-policy --secret-id <secret-name-or-arn>
 
 # Retrieve a previous version
 aws secretsmanager get-secret-value --secret-id <secret-name> --version-id <version-id>
@@ -358,6 +371,7 @@ ORDER BY minutes_between;
 - [hackingthe.cloud: Using Stolen IAM Credentials](https://hackingthe.cloud/aws/general-knowledge/using_stolen_iam_credentials/)
 - [AWS: Logging Secrets Manager API Calls with CloudTrail](https://docs.aws.amazon.com/secretsmanager/latest/userguide/monitoring.html)
 - [Rhino Security Labs: Pacu AWS Exploitation Framework](https://github.com/RhinoSecurityLabs/pacu)
+- Cybr — "AWS IAM Privilege Escalation Labs" course, lesson "[LAB] Introduction to Secrets Manager Enumeration" (IAM-first enumeration approach, resource policy check, base64-decoding note above)
 
 ## Related Notes
 - [[Hunt - AWS Secrets Manager Credential Harvesting]] — active hunt hypothesis with queries
