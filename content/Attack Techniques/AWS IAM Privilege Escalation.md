@@ -165,7 +165,7 @@ Permissions that allow taking control of a higher-privileged identity.
 | `iam:UpdateAssumeRolePolicy` | Modify a role's trust policy to allow your identity to assume it |
 
 #### 3. Permissions Boundary Removal
-Permissions boundaries cap what a role/user can do even if policies allow more. Removing them is silent escalation.
+[Permissions boundaries](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html) cap what a role/user can do even if policies allow more. Removing them is silent escalation.
 
 | Permission | Abuse Method |
 |---|---|
@@ -363,6 +363,8 @@ Key real-world detection signal not obvious from the generic technique descripti
 - [Tales from the Cloud Trenches: ECS Crypto Mining — DataDog Security Labs](https://securitylabs.datadoghq.com/articles/tales-from-the-cloud-trenches-ecs-crypto-mining/)
 - Cybr — "AWS IAM Privilege Escalation Labs" course, lesson "Useful IAM tips and security tools" (tool list above)
 - Cybr — "AWS IAM Privilege Escalation Labs" course, "[Cheat Sheet] IAM Enumeration CLI Commands" (full enumeration command reference above)
+- [AWS CLI Command Reference — iam](https://docs.aws.amazon.com/cli/latest/reference/iam/)
+- [AWS: Permissions Boundaries for IAM Entities](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html)
 
 ## Related Notes
 - [[Hunt - AWS IAM Privilege Escalation]] — active hunt hypothesis with queries

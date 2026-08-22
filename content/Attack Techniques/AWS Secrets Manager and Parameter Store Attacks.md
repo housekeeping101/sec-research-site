@@ -112,6 +112,8 @@ Common naming conventions attackers target:
 ```bash
 # List all secrets (returns names and ARNs)
 aws secretsmanager list-secrets
+# [--include-planned-deletion] also surfaces secrets scheduled for deletion — still retrievable until the deletion date, so worth including
+# [--no-include-planned-deletion] is the default behavior (excludes them)
 
 # Get metadata for a specific secret
 aws secretsmanager describe-secret --secret-id <secret-name-or-arn>
@@ -127,6 +129,9 @@ aws secretsmanager get-resource-policy --secret-id <secret-name-or-arn>
 
 # Retrieve a previous version
 aws secretsmanager get-secret-value --secret-id <secret-name> --version-id <version-id>
+
+# Retrieve by version STAGE label instead of version ID (e.g. AWSCURRENT, AWSPREVIOUS)
+aws secretsmanager get-secret-value --secret-id <secret-name> --version-stage <stage-label>
 
 # Mass dump all secrets (bash loop)
 aws secretsmanager list-secrets --query 'SecretList[*].Name' --output text | \
@@ -374,6 +379,7 @@ ORDER BY minutes_between;
 - [AWS: Authentication and Access Control for Secrets Manager — Resource Policies](https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html)
 - [Rhino Security Labs: Pacu AWS Exploitation Framework](https://github.com/RhinoSecurityLabs/pacu)
 - Cybr — "AWS IAM Privilege Escalation Labs" course, lesson "[LAB] Introduction to Secrets Manager Enumeration" (IAM-first enumeration approach, resource policy check, base64-decoding note above)
+- Cybr — "AWS IAM Privilege Escalation Labs" course, "[Cheat Sheet] Secrets Manager Enumeration CLI Commands" (--include-planned-deletion and --version-stage flags above)
 
 ## Related Notes
 - [[Hunt - AWS Secrets Manager Credential Harvesting]] — active hunt hypothesis with queries
