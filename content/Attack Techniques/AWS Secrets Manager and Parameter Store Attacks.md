@@ -370,6 +370,7 @@ ORDER BY minutes_between;
 ## References
 - [hackingthe.cloud: Using Stolen IAM Credentials](https://hackingthe.cloud/aws/general-knowledge/using_stolen_iam_credentials/)
 - [AWS: Logging Secrets Manager API Calls with CloudTrail](https://docs.aws.amazon.com/secretsmanager/latest/userguide/monitoring.html)
+- [AWS CLI Command Reference — secretsmanager](https://docs.aws.amazon.com/cli/latest/reference/secretsmanager/#cli-aws-secretsmanager)
 - [Rhino Security Labs: Pacu AWS Exploitation Framework](https://github.com/RhinoSecurityLabs/pacu)
 - Cybr — "AWS IAM Privilege Escalation Labs" course, lesson "[LAB] Introduction to Secrets Manager Enumeration" (IAM-first enumeration approach, resource policy check, base64-decoding note above)
 
