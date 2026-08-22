@@ -47,6 +47,7 @@ A living index of all research notes in the vault. Updated each time a new note 
 | [[Malware & TTPs/Overlord RAT via Fake Zoom Installer - Research Extraction\|Overlord RAT via Fake Zoom Installer]] | T1204.002, T1027, T1140, T1036.005, T1547.014, T1059.004, T1082, T1071.001, T1056.001, T1113, T1123, T1005, T1041 | macOS, Windows | 2026-08-13 |
 | [[Malware & TTPs/TryCloudflare Tunnel Abuse for RAT Delivery - Research Extraction\|TryCloudflare Tunnel Abuse for RAT Delivery]] | T1566.001, T1204.002, T1027.012, T1036, T1218, T1059.003, T1059.006, T1055, T1620, T1547.001, T1572, T1071.001, T1041 | Windows | 2026-08-21 |
 | [[Malware & TTPs/Cloudflare Workers Dead-Drop Resolver C2 - Research Extraction\|Cloudflare Workers Dead-Drop Resolver C2]] | T1566.002, T1021.002, T1037.001, T1574.002, T1140, T1132, T1071.001, T1008, T1550.001, T1649 | Windows, Cloud | 2026-08-21 |
+| [[Malware & TTPs/GUI-Vil (p0-LUCR-1) AWS Cryptomining Campaigns - Research Extraction\|GUI-Vil (p0-LUCR-1) AWS Cryptomining Campaigns]] | T1078.004, T1548, T1098, T1136.003, T1610, T1496, T1530, T1021.004 | AWS | 2026-08-22 |
 
 ---
 
@@ -79,6 +80,7 @@ A living index of all research notes in the vault. Updated each time a new note 
 | [[Threat Actors & APTs/Scattered Spider\|Scattered Spider]] | — | Financial | — |
 | [[Threat Actors & APTs/CHAMELGANG & FRIENDS\|ChamelGang & Friends]] | — | Espionage | — |
 | [[Threat Actors & APTs/Bling Libra's Tactical Evolution- The Threat Actor Group Behind ShinyHunters Ransomware\|Bling Libra / ShinyHunters]] | — | Financial | — |
+| [[Threat Actors & APTs/GUI-Vil (p0-LUCR-1)\|GUI-Vil (p0-LUCR-1)]] | Indonesia | Financial (cryptomining) | 2026-08-22 |
 
 ---
 
@@ -190,6 +192,15 @@ Notes created together as part of a single research session are grouped here for
 - [[Malware & TTPs/Cloudflare Workers Dead-Drop Resolver C2 - Research Extraction|2a. Research Extraction — Cloudflare Workers Dead-Drop Resolver C2]] — Taiwan-targeting APT campaign (CyCraft/JSAC 2026), GRAPHBROTLI/GRAPHRELOOK/RCREMARK malware, AD CS ESC1/3/8/11 abuse, ephemeral GPO tampering; Gamaredon convergent-adoption context
 - [[Attack Techniques/Cloudflare Workers Dead-Drop Resolver C2|2b. TTP Note]] — step-by-step attack chain, MITRE mapping, CrowdStrike FQL and Databricks SQL query stubs
 - [[20 - Areas/Threat Hunting/Hunt - Cloudflare Workers Dead-Drop Resolver C2|2c. Hunt Hypothesis]] — 7-step hunt plan targeting Graph API OAuth abuse, Workers subdomain traffic, DLL side-loading, ADCS NTLM relay, GPO script tampering
+
+### GUI-Vil (p0-LUCR-1) AWS Cryptomining Campaigns (2026-08-22)
+> Sources: Permiso (p0 Labs) — Unmasking GUI-vil: A Cloud Threat Actor Case Study; DataDog Security Labs — Tales from the Cloud Trenches: ECS Crypto Mining; Cybr — "AWS IAM Privilege Escalation Labs" course lesson ("Real-world case studies")
+> Discovered via a Cybr training course lesson that cited both source articles plus a boto3 persistence script; captured as a standalone research cluster rather than duplicating the existing general AWS IAM Privilege Escalation TTP/Hunt notes, which were instead enriched in place with these real-world specifics.
+- [[Malware & TTPs/GUI-Vil (p0-LUCR-1) AWS Cryptomining Campaigns - Research Extraction\|1. Research Extraction]] — three converging case studies (GUI-Vil/Permiso, DataDog ECS/Fargate abuse, "XAV" boto3 persistence script), full IOCs, attack prerequisites
+- [[Threat Actors & APTs/GUI-Vil (p0-LUCR-1)\|2. Threat Actor Profile]] — Indonesia-based financially motivated actor, GUI-tool tradecraft (S3 Browser), IOCs
+- [[Attack Techniques/AWS IAM Privilege Escalation\|3. Enriched TTP Note]] — added `Real-World Case Studies` section, GUI-Vil threat actor row, and cross-links (original note and its general escalation-path content are unchanged)
+- [[20 - Areas/Threat Hunting/Hunt - AWS IAM Privilege Escalation\|4. Enriched Hunt Hypothesis]] — added IOC-based CrowdStrike FQL/Databricks SQL queries (S3 Browser user agent, stealth `CreateLoginProfile` on pre-existing users, known attacker username patterns, ECS Fargate abuse-scale detection) and matching tuning notes
+- Query Library — appended the same IOC-based queries to `40 - Resources/Query Library/queries/hunting/cs-hunt-iam-privesc.md` and `db-hunt-iam-privesc.md`
 
 ---
 

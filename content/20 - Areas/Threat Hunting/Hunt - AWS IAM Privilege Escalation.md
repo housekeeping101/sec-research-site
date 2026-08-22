@@ -95,6 +95,26 @@ event_simpleName=CloudTrailEvent
 | EventName IN ("ListPolicies", "SimulatePrincipalPolicy", "GetPolicy", "ListAttachedUserPolicies")
 | table _time, UserIdentityArn, EventName, SourceIPAddress
 | sort _time asc
+
+// GUI-Vil-style stealth takeover: CreateLoginProfile on a PRE-EXISTING user (not one created moments earlier)
+event_simpleName=CloudTrailEvent
+| EventName="CreateLoginProfile"
+| join field=UserIdentityArn
+    [ search event_simpleName=CloudTrailEvent EventName="CreateUser"
+      | rename UserName as NewUserName ]
+| NOT RequestParameters.userName=NewUserName
+| table _time, UserIdentityArn, RequestParameters.userName, SourceIPAddress
+
+// Known real-world attacker user agent (GUI-Vil)
+event_simpleName=CloudTrailEvent
+| UserAgent="*S3 Browser*"
+| table _time, UserIdentityArn, EventName, UserAgent, SourceIPAddress
+
+// New IAM usernames matching known attacker naming conventions
+event_simpleName=CloudTrailEvent
+| EventName="CreateUser"
+| RequestParameters.userName IN ("backup", "sec_audit", "administrateurs") OR RequestParameters.userName="aws_dev*" OR RequestParameters.userName="aws-cli*"
+| table _time, UserIdentityArn, RequestParameters.userName, SourceIPAddress
 ```
 
 ### Databricks SQL
@@ -158,6 +178,32 @@ WHERE event_name = 'CreateAccessKey'
   AND JSON_EXTRACT_SCALAR(request_parameters, '$.userName') IS NOT NULL
   AND NOT user_identity_arn LIKE CONCAT('%', JSON_EXTRACT_SCALAR(request_parameters, '$.userName'), '%')
 ORDER BY event_time DESC;
+
+-- Real-world IOC-based detections (GUI-Vil / DataDog case studies)
+
+-- Known attacker user agent (GUI-Vil's S3 Browser)
+SELECT event_time, user_identity_arn, event_name, user_agent, source_ip_address
+FROM cloudtrail_events
+WHERE user_agent LIKE '%S3 Browser%'
+ORDER BY event_time DESC;
+
+-- New IAM usernames matching known attacker naming conventions
+SELECT event_time, user_identity_arn, JSON_EXTRACT_SCALAR(request_parameters, '$.userName') AS new_user, source_ip_address
+FROM cloudtrail_events
+WHERE event_name = 'CreateUser'
+  AND (
+    JSON_EXTRACT_SCALAR(request_parameters, '$.userName') IN ('backup', 'sec_audit', 'administrateurs')
+    OR JSON_EXTRACT_SCALAR(request_parameters, '$.userName') LIKE 'aws_dev%'
+    OR JSON_EXTRACT_SCALAR(request_parameters, '$.userName') LIKE 'aws-cli%'
+  )
+ORDER BY event_time DESC;
+
+-- ECS Fargate mining-scale abuse: cluster/task-def spikes in regions with no prior history
+SELECT aws_region, event_name, COUNT(*) AS event_count, MIN(event_time) AS first_seen, MAX(event_time) AS last_seen
+FROM cloudtrail_events
+WHERE event_name IN ('CreateCluster', 'RegisterTaskDefinition', 'CreateService')
+GROUP BY aws_region, event_name
+ORDER BY event_count DESC;
 ```
 
 ---
@@ -172,6 +218,14 @@ ORDER BY event_time DESC;
 - IT/cloud admin teams performing legitimate IAM work will appear — cross-reference with change requests
 - `CreatePolicyVersion` during deployments is common — filter by known CI/CD role ARNs
 - `PassRole` by CodePipeline or CodeBuild service roles is expected — document and exclude known automation
+- The `aws-cli*` / `aws_dev*` username pattern query can false-positive on legitimate developer-provisioned service accounts — tune the prefix list to your org's actual naming conventions before relying on it as a standalone alert
+- `S3 Browser` user agent is a strong signal in most enterprise environments (rarely used legitimately) but confirm it isn't part of an approved internal S3 management workflow before treating every hit as malicious
+- ECS cluster/task-definition spikes are expected during legitimate autoscaling events or new service rollouts — cross-reference region against your account's approved region list first; GUI-Vil/DataDog-style abuse specifically shows up in regions with **no prior account history**
+
+---
+
+## Real-World Grounding
+This hunt's IOC-based queries above are derived directly from documented intrusions, not hypothetical patterns — see [[GUI-Vil (p0-LUCR-1) AWS Cryptomining Campaigns - Research Extraction]] for the full case studies (Permiso/p0 Labs, DataDog Security Labs) and [[GUI-Vil (p0-LUCR-1)]] for the actor profile behind the S3 Browser / stealth-CreateLoginProfile pattern.
 
 ---
 
@@ -181,8 +235,9 @@ ORDER BY event_time DESC;
 - [ ] Detection rule created → [[link to rule]]
 
 ## Related Notes
-- [[AWS IAM Privilege Escalation]] — TTP note with full technique breakdown
 - [[AWS IAM Privilege Escalation]] — full TTP note with permission tables, tool reference, and escalation paths
 - [[Hunt - EC2 IMDS Credential Theft]] — related hunt; IMDS theft feeds IAM abuse
+- [[GUI-Vil (p0-LUCR-1) AWS Cryptomining Campaigns - Research Extraction]] — real-world case studies underpinning the IOC-based queries above
+- [[GUI-Vil (p0-LUCR-1)]] — threat actor profile
 - [[40 - Resources/Query Library/Hunt Queries]]
 - [[20 - Areas/Detection Engineering/Detections]]

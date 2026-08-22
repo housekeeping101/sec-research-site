@@ -4,7 +4,7 @@ date: 2026-03-08
 type: ttp
 mitre_id: T1078.004, T1548, T1098, T1136.003
 mitre_tactic: Privilege Escalation, Persistence, Defense Evasion
-threat_actors: []
+threat_actors: [GUI-Vil (p0-LUCR-1)]
 tools_used: [Pacu, PMapper, iam-vulnerable, AWS CLI]
 platforms: [AWS]
 tags:
@@ -26,12 +26,72 @@ AWS IAM privilege escalation abuses overly permissive IAM policies to elevate ac
 
 ### Step 1 — Enumerate Current Permissions
 Attacker starts with any AWS identity (user, role, instance profile) and enumerates what it can do.
+
+**Identity check (always works — no policy can block it):**
 ```bash
-aws iam get-user
-aws iam list-attached-user-policies --user-name <user>
-aws iam list-user-policies --user-name <user>
-aws sts get-caller-identity
+aws sts get-caller-identity   # returns UserId, Account, Arn — the AWS "whoami"
+aws iam get-user              # similar info, requires iam:GetUser permission
 ```
+`get-caller-identity` is the near-universal first move for both defenders and attackers: it returns information that could be inferred from error messages anyway, so no IAM policy can prevent a valid credential from calling it.
+
+**Account-wide snapshot (often denied, worth trying anyway):**
+```bash
+aws iam get-account-authorization-details   # full IAM config snapshot: users, groups, roles, policies, relationships
+```
+
+**Enumerate users:**
+```bash
+aws iam list-users
+aws iam get-user --user-name <user>                          # user metadata — includes permissions boundaries!
+aws iam list-service-specific-credentials                    # service-specific credentials for the current user
+aws iam list-access-keys                                    # own access keys
+aws iam list-access-keys --user-name <user>                  # another user's keys (if permitted)
+aws iam list-user-policies --user-name <user>                # inline policy NAMES only
+aws iam get-user-policy --user-name <user> --policy-name <policy>   # inline policy CONTENT
+aws iam list-attached-user-policies --user-name <user>        # attached MANAGED policies
+aws iam get-login-profile --user-name <user>                  # does this user have console password access? returns UserName + CreatedDate if so
+```
+A user with no inline policies (`list-user-policies` returns empty) is **not** the same as a user with no permissions — always also check group membership and managed policy attachments before concluding a user is low-value.
+
+**Enumerate groups:**
+```bash
+aws iam list-groups
+aws iam list-groups-for-user --user-name <user>               # which group(s) is this user in?
+aws iam get-group --group-name <group>                        # membership roster
+aws iam list-group-policies --group-name <group>               # inline policy NAMES
+aws iam get-group-policy --group-name <group> --policy-name <policy>   # inline policy CONTENT
+aws iam list-attached-group-policies --group-name <group>       # attached MANAGED policies (e.g. AWS-managed ARNs like AmazonS3ReadOnlyAccess)
+```
+Best practice (and therefore common in the wild) is to grant permissions via group membership rather than directly on users — so group enumeration frequently reveals more than user-level policy checks alone. Take notes as you go; re-deriving group/policy names later wastes CLI round-trips.
+
+**Enumerate roles:**
+```bash
+aws iam list-roles                                             # can return hundreds — accounts allow up to 1,000 roles by default
+aws iam list-roles --query "Roles[?RoleName=='<role>']"         # filter to a known role name (case-sensitive)
+aws iam get-role --role-name <role>                             # get details for one specific role directly (avoids paging through list-roles)
+aws iam list-role-policies --role-name <role>                   # inline policy NAMES
+aws iam get-role-policy --role-name <role> --policy-name <policy>   # inline policy CONTENT
+aws iam list-attached-role-policies --role-name <role>           # attached MANAGED policies
+```
+The `list-roles`/`get-role` output includes the role's `AssumeRolePolicyDocument` — its **trust policy**, i.e. who is allowed to assume it (often scoped to a specific principal via an `ArnEquals` condition). This is distinct from the role's actual *permissions*, which only `list-role-policies`/`get-role-policy`/`list-attached-role-policies` reveal. A role whose trust policy names a different user than the one you're currently enumerating as is a strong pivot target: escalating to that named principal (or otherwise satisfying the trust condition) becomes the path to assuming the role. Overly broad role permissions (e.g. `s3:*`) are a red flag worth flagging in any review, not just during an attack.
+
+**Enumerate policies:**
+```bash
+aws iam list-policies [--only-attached] [--scope Local]         # --only-attached: only policies attached to a user/group/role; --scope Local: customer-managed only (vs. --scope AWS for AWS-managed)
+aws iam list-policies-granting-service-access --arn <identity> --service-namespaces <svc>   # e.g. --service-namespaces eks — which policies grant this identity access to a given service
+aws iam get-policy --policy-arn <arn>                            # details for a specific policy
+aws iam list-policy-versions --policy-arn <arn>                  # all versions of a managed policy + which is the current default
+aws iam get-policy-version --policy-arn <arn> --version-id <v1|v2|...>   # content of a specific policy version
+aws iam list-entities-for-policy --policy-arn <arn>              # all users/groups/roles a managed policy is attached to
+```
+`list-policy-versions` + `get-policy-version` matters because `iam:CreatePolicyVersion` + `iam:SetDefaultPolicyVersion` is itself a direct escalation path (see Technical Reference below) — enumerating existing versions first shows whether a rollback to a more permissive prior version is even possible.
+
+**Enumerate MFA:**
+```bash
+aws iam list-mfa-devices [--user-name <user>]                    # MFA devices for a user (auto-detected from the access key if --user-name omitted)
+aws iam list-virtual-mfa-devices [--assignment-status Assigned|Unassigned|Any]   # all virtual MFA devices in the account, optionally filtered by assignment status
+```
+A user or role that should have MFA-enforced conditions but shows no MFA device assigned is a signal that MFA-conditional policy checks (`aws:MultiFactorAuthPresent`) may not actually be gating anything for that identity.
 
 ### Step 2 — Identify Escalation Path
 One or more of three escalation categories is present:
@@ -266,6 +326,12 @@ ORDER BY event_time DESC;
 | **PMapper** | Graphs IAM relationships and identifies all escalation paths automatically |
 | **iam-vulnerable** | BishopFox lab environment for practicing IAM privesc (by Seth Art) |
 | **AWS CLI** | Manual enumeration and exploitation |
+| **[IAMActionHunter](https://github.com/RhinoSecurityLabs/IAMActionHunter)** | Evaluates one or more IAM policies to quickly identify issues |
+| **[IAMFinder](https://github.com/prisma-cloud/IAMFinder)** | Enumerates users and IAM roles in a target AWS account |
+| **[EnumerateIAM](https://github.com/andresriancho/enumerate-iam)** | Brute-forces all `get*`/`list*` API calls allowed by a credential set to discover its actual effective permissions (non-destructive) |
+| **[aws_escalate.py](https://github.com/RhinoSecurityLabs/Security-Research/blob/master/tools/aws-pentest-tools/aws_escalate.py)** | Rhino Security Labs script that scans a credential set for known privesc paths |
+| **[ScoutSuite](https://github.com/nccgroup/ScoutSuite)** | Broader multi-cloud security auditing tool that also flags IAM misconfigurations (appears unmaintained as of recent checks) |
+| **[Prowler](https://github.com/prowler-cloud/prowler)** | AWS/cloud security auditing tool; also catches IAM misconfigurations |
 
 ---
 
@@ -277,6 +343,14 @@ PassRole escalation and direct policy manipulation are used across financially m
 | Financially motivated | CreateAccessKey on privileged users, PassRole to Lambda |
 | Nation-state | Persistence via backdoor roles, UpdateAssumeRolePolicy |
 | Insider threat | AttachUserPolicy, AddUserToGroup |
+| **GUI-Vil (p0-LUCR-1)** | `iam:CreateLoginProfile` on existing users (stealth takeover) + `iam:PutUserPolicy`/`AttachUserPolicy` for admin, followed by EC2/ECS cryptomining — see below |
+
+---
+
+## Real-World Case Studies
+Three independently documented intrusions all converge on the same core escalation/persistence pairing — `iam:CreateLoginProfile` + `iam:AttachUserPolicy`/`iam:PutUserPolicy` against a new or existing IAM user — used to pivot from a single leaked access key to full admin console access, then cryptomining (EC2 or ECS Fargate). Full technical breakdown, IOCs, and the actual persistence script used in the wild: [[GUI-Vil (p0-LUCR-1) AWS Cryptomining Campaigns - Research Extraction]] and [[GUI-Vil (p0-LUCR-1)]] (actor profile).
+
+Key real-world detection signal not obvious from the generic technique description above: `iam:CreateLoginProfile` called against a user that **already existed** (as opposed to a brand-new user created moments earlier) is GUI-Vil's specific stealth pattern, and is rare enough in legitimate operations to be high-fidelity on its own.
 
 ---
 
@@ -285,8 +359,14 @@ PassRole escalation and direct policy manipulation are used across financially m
 - [Rhino Security Labs — AWS IAM Privilege Escalation Methods and Mitigation](https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/)
 - [BishopFox — iam-vulnerable](https://github.com/BishopFox/iam-vulnerable)
 - [PMapper](https://github.com/nccgroup/PMapper)
+- [Unmasking GUI-vil: A Cloud Threat Actor Case Study — Permiso](https://permiso.io/blog/s/unmasking-guivil-new-cloud-threat-actor/)
+- [Tales from the Cloud Trenches: ECS Crypto Mining — DataDog Security Labs](https://securitylabs.datadoghq.com/articles/tales-from-the-cloud-trenches-ecs-crypto-mining/)
+- Cybr — "AWS IAM Privilege Escalation Labs" course, lesson "Useful IAM tips and security tools" (tool list above)
+- Cybr — "AWS IAM Privilege Escalation Labs" course, "[Cheat Sheet] IAM Enumeration CLI Commands" (full enumeration command reference above)
 
 ## Related Notes
 - [[Hunt - AWS IAM Privilege Escalation]] — active hunt hypothesis with queries
 - [[EC2 Instance Metadata Service Abuse]] — credential theft technique feeding into IAM abuse
+- [[GUI-Vil (p0-LUCR-1) AWS Cryptomining Campaigns - Research Extraction]] — real-world case studies using this exact technique
+- [[GUI-Vil (p0-LUCR-1)]] — threat actor profile
 - [[Research Index]]
