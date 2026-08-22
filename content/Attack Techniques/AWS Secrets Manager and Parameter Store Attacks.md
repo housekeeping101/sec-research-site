@@ -95,7 +95,7 @@ Common naming conventions attackers target:
 | `secretsmanager:ListSecretVersionIds` | Enumerate versions (useful if current value rotated) |
 | `secretsmanager:GetResourcePolicy` | Check whether a resource-based policy is attached to the secret |
 
-> **Identity-based vs. resource-based policies**: an identity-based policy (attached to the calling user/role) granting `GetSecretValue` is not the whole story — Secrets Manager also supports a **resource-based policy** on the secret itself, specifying who/what can access it. Having identity-based access does not guarantee the resource policy allows it (and vice versa); check both with `get-resource-policy` before assuming access will succeed or fail. Many secrets have no resource policy set at all (it's optional), which itself is worth noting as a missed defense-in-depth opportunity.
+> **Identity-based vs. resource-based policies**: an identity-based policy (attached to the calling user/role) granting `GetSecretValue` is not the whole story — Secrets Manager also supports a **resource-based policy** on the secret itself, specifying who/what can access it (see [AWS: Authentication and access control for Secrets Manager — resource policies](https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html)). Having identity-based access does not guarantee the resource policy allows it (and vice versa); check both with `get-resource-policy` before assuming access will succeed or fail. Many secrets have no resource policy set at all (it's optional), which itself is worth noting as a missed defense-in-depth opportunity.
 
 #### Parameter Store
 | Permission | Action |
@@ -371,6 +371,7 @@ ORDER BY minutes_between;
 - [hackingthe.cloud: Using Stolen IAM Credentials](https://hackingthe.cloud/aws/general-knowledge/using_stolen_iam_credentials/)
 - [AWS: Logging Secrets Manager API Calls with CloudTrail](https://docs.aws.amazon.com/secretsmanager/latest/userguide/monitoring.html)
 - [AWS CLI Command Reference — secretsmanager](https://docs.aws.amazon.com/cli/latest/reference/secretsmanager/#cli-aws-secretsmanager)
+- [AWS: Authentication and Access Control for Secrets Manager — Resource Policies](https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html)
 - [Rhino Security Labs: Pacu AWS Exploitation Framework](https://github.com/RhinoSecurityLabs/pacu)
 - Cybr — "AWS IAM Privilege Escalation Labs" course, lesson "[LAB] Introduction to Secrets Manager Enumeration" (IAM-first enumeration approach, resource policy check, base64-decoding note above)
 
